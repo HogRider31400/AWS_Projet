@@ -1,8 +1,12 @@
 export class Player extends Phaser.GameObjects.Sprite {
-    constructor (scene, x, y)
+    constructor (scene, x, y, active)
     {
-        super(scene, x, y);
-        
+        super(scene, x, y, 'player', 0);
+        this.scene = scene;
+        this.active = active;
+        scene.physics.add.existing(this);
+        this.body.setCollideWorldBounds(true)
+
         if (!scene.textures.exists('blueSquare')) {
             let graphics = scene.add.graphics();
             graphics.fillStyle(0x0000FF);
@@ -11,7 +15,7 @@ export class Player extends Phaser.GameObjects.Sprite {
             graphics.destroy();
         }
 
-        this.setTexture('blueSquare');
+        //this.setTexture('blueSquare');
         this.setPosition(x, y);
 
 
@@ -39,20 +43,44 @@ export class Player extends Phaser.GameObjects.Sprite {
 
     preUpdate (time, delta)
     {
+        
         super.preUpdate(time, delta);
+        if(!this.active) return;
         this.body.setVelocity(0);
 
+        let moving = false;
+        const speed = 150; // Ajustement de la vitesse pour éviter les sauts brusques
+
         if (this.cursors.left.isDown) {
-            this.body.setVelocityX(-this.moveSpeed);
+            this.body.setVelocityX(-speed);
+            this.anims.play('left', true);
+            moving = true;
         } else if (this.cursors.right.isDown) {
-            this.body.setVelocityX(this.moveSpeed);
+            this.body.setVelocityX(speed);
+            this.anims.play('right', true);
+            moving = true;
+        } else {
+            this.body.setVelocityX(0);
         }
 
         if (this.cursors.up.isDown) {
-            this.body.setVelocityY(-this.moveSpeed);
+            this.body.setVelocityY(-speed);
+            this.anims.play('up', true);
+            moving = true;
         } else if (this.cursors.down.isDown) {
-            this.body.setVelocityY(this.moveSpeed);
+            this.body.setVelocityY(speed);
+            this.anims.play('down', true);
+            moving = true;
+        } else {
+            this.body.setVelocityY(0);
         }
+
+        if (!moving) {
+            this.anims.stop();
+            this.setFrame(1); // Frame statique par défaut (milieu de la rangée bas)
+        }
+        
+        this.scene.sendPlayerPosition(this.x,this.y);
 
         if (this.canInteract) {
             const berryBush = this.scene.berryBush;
