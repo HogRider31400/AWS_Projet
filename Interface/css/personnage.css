@@ -1,0 +1,115 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background : url('../images/bg.jpg');
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    text-align: center;
+    max-width: 700px;
+    width: 80%;
+    padding: 2rem;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(20px);
+}
+
+header h1 {
+    color: white;
+    margin-bottom: 2rem;
+    text-align: center;
+    text-shadow: black 2px 2px 2px;
+}
+
+.character-selection {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.character-display {
+    text-align: center;
+    margin: 0 1rem;
+}
+
+.character-circle {
+    width: 100px;
+    height: 100px;
+    background-color:white;
+    border-radius: 50%;
+    margin: 1rem auto;
+}
+
+.arrow-button {
+    background: none;
+    border: 2px solid white;
+    color: #42b883;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.arrow-button:hover {
+    background-color: #42b883;
+    color: white;
+}
+
+form {
+    margin-top: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.form-group1 {
+    margin-bottom: 1rem;
+    width: 100%;
+    text-align: center;
+}
+
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: white;
+    text-shadow: black 2px 2px 2px;
+    font-family: 'Arial', sans-serif;
+}
+
+p {
+    color: white;
+    text-shadow: black 2px 2px 2px;
+}
+
+input, select {
+    width: 50%;
+    padding: 0.8rem;
+    border-radius: 10px;
+    border: none;
+    margin-top: 0.5rem;
+    text-align: center;
+    
+}
+
+.cta-button {
+    background-color: #42b883;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.cta-button:hover {
+    background-color: #3aa876;
+}

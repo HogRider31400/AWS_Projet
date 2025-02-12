@@ -1,0 +1,91 @@
+/* Style général */
+
+body {
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #1a1f2c;
+    color: #ffffff;
+    line-height: 1.6;
+}
+
+.rules-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Titres */
+h1 {
+    color: #42b883;
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 2rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+h2 {
+    color: #ffffff;
+    border-bottom: 2px solid #42b883;
+    padding-bottom: 0.5rem;
+    margin-top: 2rem;
+}
+
+/* Paragraphes */
+p1, p2, p3, p4 {
+    display: block;
+    margin-bottom: 1rem;
+    color: #e6e6e6c8;
+}
+
+/* Listes */
+ul {
+    list-style-type: none;
+    padding-left: 1.5rem;
+    color: #e6e6e6c8;
+}
+
+li {
+    margin-bottom: 0.8rem;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+/* Bouton CTA */
+.cta-button {
+    display: inline-block;
+    background-color: #42b883;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 6px;
+    text-decoration: none;
+    margin-top: 2rem;
+    transition: background-color 0.3s ease;
+}
+
+.cta-button:hover {
+    background-color: #3aa876;
+}
+
+/* Sections */
+section {
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .rules-container {
+        padding: 1rem;
+        margin: 1rem;
+    }
+
+    h1 {
+        font-size: 2em;
+    }
+}

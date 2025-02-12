@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Choisir votre personnage</title>
+    <link rel="stylesheet" href="css/personnage.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Choisissez votre personnage</h1>
+        </header>
+
+        <main>
+            <div class="character-selection">
+                <button class="arrow-button" id="left-arrow">&#9664;</button>
+                <div class="character-display">
+                    <p>Votre personnage</p>
+                    <div class="character-circle"></div>
+                </div>
+                <button class="arrow-button" id="right-arrow">&#9654;</button>
+            </div>
+
+            <form>
+                <div class="form-group1">
+                    <label for="pseudo">Entrer un pseudo :</label>
+                    <input type="text" id="pseudo" name="pseudo" required>
+                    
+                </div>
+                
+                <div class="form-group">
+                    <label for="difficulty">Difficulté :</label>
+                    <select id="difficulty" name="difficulty">
+                        <option value="easy">Facile</option>
+                        <option value="medium">Moyen</option>
+                        <option value="hard">Difficile</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="players">Nombre de joueurs :</label>
+                    <select id="players" name="players">
+                        <option value="4">4</option>
+                        <option value="3">8</option>
+                        <option value="4">12</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="cta-button">Create Room</button>
+            </form>
+        </main>
+    </div>
+</body>
+</html>
