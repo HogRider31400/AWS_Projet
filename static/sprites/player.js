@@ -5,6 +5,7 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.scene = scene;
         this.isActive = active;
         scene.physics.add.existing(this);
+        //this.tint = 0x3d3d29
         
         this.body.setCollideWorldBounds(true)
 
@@ -65,11 +66,11 @@ export class Player extends Phaser.GameObjects.Sprite {
         const speed = 150;
         if(this.direction.x == "left") {
             this.body.setVelocityX(-speed);
-            //this.anims.play('left', true);
+            this.anims.play('left', true);
         }
         else if(this.direction.x == "right") {
             this.body.setVelocityX(speed);
-            //this.anims.play('right', true);
+            this.anims.play('right', true);
         }
         else {
             this.body.setVelocityX(0);
@@ -77,11 +78,13 @@ export class Player extends Phaser.GameObjects.Sprite {
 
         if(this.direction.y == "up") {
             this.body.setVelocityY(-speed);
-            //this.anims.play('up', true);
+            if(this.direction.x == "n")
+                this.anims.play('up', true);
         }
         else if (this.direction.y == "down") {
             this.body.setVelocityY(speed);
-            //this.anims.play('down', true);
+            if(this.direction.x == "n")
+                this.anims.play('down', true);
         }
         else{
             this.body.setVelocityY(0);
@@ -95,7 +98,7 @@ export class Player extends Phaser.GameObjects.Sprite {
 
         //Update de joueur non actif
         if(this.isActive == false){
-            //this.applyMovement();
+            this.applyMovement();
             return;
         }
 

@@ -51,6 +51,21 @@
          "spacing":0,
          "tilecount":160,
          "tileheight":32,
+         "tiles":[
+                {
+                 "id":50,
+                 "properties":[
+                        {
+                         "name":"name",
+                         "type":"string",
+                         "value":"dddd"
+                        }, 
+                        {
+                         "name":"test",
+                         "type":"string",
+                         "value":"salut"
+                        }]
+                }],
          "tilewidth":32
         }],
  "tilewidth":32,

@@ -1,6 +1,7 @@
 const express = require('express');
 const socketIo = require('socket.io');
 const http = require('http');
+const fs = require('node:fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -14,14 +15,66 @@ let players = {};
 let map = {
   "1" : {
     name : "berryBush",
-    capacity : 5
+    capacity : 5,
+    y : 6,
+    x : 6
   },
   "2" : {
     name : "woodPile",
-    capacity : 3
+    capacity : 3,
+    y : 6,
+    x : 7
   }
 }
 
+
+
+let tilemap = JSON.parse(fs.readFileSync('./static/tilemaps/map_test5.tmj', 'utf8'));
+let cur_id = 3
+
+let layers = tilemap.layers
+/*
+  Pour chaque tile ayant une propriété, la seule prop requise est son nom
+  Le reste est en bonus et aux soins du codeur de vérifier 
+*/
+let tiles_props = tilemap.tilesets[0].tiles
+
+for(let layer_id in layers) {
+  let layer = layers[layer_id]
+  for(let tile_id in layer.data) {
+    let tile = layer.data[tile_id]
+    let props_array = null;
+    //Le pb c que les props sont sous array
+    for(let p_tile_id in tiles_props){
+      let p_tile = tiles_props[p_tile_id]
+      if(p_tile.id == tile){
+        props_array = p_tile.properties;
+        break;
+      }
+    }
+    if(props_array == null) continue;
+    //console.log(props_array)
+    let props = {}
+    //Pareil donc on unwrap
+    for(let cur_prop_id in props_array) {
+      let cur_prop = props_array[cur_prop_id]
+      props[cur_prop.name] = cur_prop.value
+    }
+    map[cur_id] = {...props} //là normalement on a récup les props à vérifier
+    //On y ajoute aussi son x et son y
+    map[cur_id].y = Math.floor(tile_id/layer.width)
+    map[cur_id].x = tile_id%layer.width
+
+    cur_id++;
+  }
+}
+
+//En assumant des tiles de 32x32
+function get_pos(item) {
+  return [32*item.x,32*item.y]
+}
+
+console.log(map)
 function distance(ax,ay,bx,by) {
   return Math.sqrt(Math.pow(ax - bx,2) + Math.pow(ay - by,2))
 }
@@ -69,7 +122,9 @@ io.on('connection', (socket) => {
         /*
         Format de data : un dico avec quelques clés dont 1 systématique "type"
         type : berryBushPickUp -> un joueur a récup un berry bush, les clés sont alors 
-         - player : le joueur qui l'a fait
+        - player : le joueur qui l'a fait
+        - item_type : le type d'item (un bush ? des planches ? autre chose ?)
+        -item_id : l'id de l'item dans le jeu
          (- delete : un booléen pour savoir si le bush doit être suppr ?)
         */
         if(!data.type) return;
@@ -77,6 +132,13 @@ io.on('connection', (socket) => {
           if (!map[data.item_id]) return;
           if (!map[data.item_id].capacity) return;
           if (map[data.item_id].capacity == 0) return;
+          if (!players[data.player]) return;
+
+          let px = players[data.player].x
+          let py = players[data.player].y
+          let ix, iy = get_pos(map[data.item_id]) 
+          if (distance(px,py,ix,iy) > 100) return; //il est trop loin pour le faire
+
 
           map[data.item_id].capacity--;
           io.emit('action', data)

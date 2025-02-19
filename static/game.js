@@ -48,43 +48,19 @@ var config = {
     //const tileset2 = map.addTilesetImage('water_animation_spritesheet', 'Water');
     this.layerEau = map.createLayer('island', [tileset1]); 
     let layerEau = this.layerEau
-    //const layerIle = map.createLayer('Ile', tileset);
-    //layerEau.x = 900
-    //layerEau.y = 700
-    //this.cameras.main.setZoom(2);
-    this.physics.world.setBounds(0, 0, 800 * 8, 600 * 8);
-    
-    this.anims.create({
-      key: 'down',
-      frames: this.anims.generateFrameNumbers('player', { start: 0, end: 2 }),
-      frameRate: 10,
-      repeat: -1
-    });
-    this.anims.create({
-        key: 'left',
-        frames: this.anims.generateFrameNumbers('player', { start: 12, end: 14 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'right',
-        frames: this.anims.generateFrameNumbers('player', { start: 24, end: 26 }),
-        frameRate: 10,
-        repeat: -1
-    });
-    this.anims.create({
-        key: 'up',
-        frames: this.anims.generateFrameNumbers('player', { start: 36, end: 38 }),
-        frameRate: 10,
-        repeat: -1
-    });
 
+    this.physics.world.setBounds(0, 0, 800 * 8, 600 * 8);
 
     this.berryBush = new BerryBush(this, 200, 200)
     this.oakPlank = new OakPlanks(this, 250, 200)
     this.player = new Player(this, 300,300, true)
     player = this.player;
-    //this.cameras.main.setZoom(0.2)
+
+    this.elements = [
+      this.berryBush,
+      this.oakPlank
+    ]
+
     this.cameras.main.startFollow(this.player, true);
     this.physics.add.collider(
       this.player,
@@ -92,12 +68,12 @@ var config = {
       null,
       null,
       this
-  );
+    );
     layerEau.setCollisionBetween(54,104)
     console.log(layerEau.body)
-
-    //this.player = this.physics.add.sprite(config.width / 2, config.height / 2, 'player');
-    //player.setCollideWorldBounds(true);
+    //layerEau.setTint(0x3d3d29)
+    // #999966 pluie ?
+    // #3d3d29 nuit ?
 
     socket.on('positions', (data) => {
       playersData = data;
@@ -171,22 +147,51 @@ var config = {
     }
     this.sendPlayerPosition(300,300)
 
+
+    //Def animations
+    this.anims.create({
+      key: 'left',
+      frames: this.anims.generateFrameNumbers('player', { start: 117, end: 125 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    this.anims.create({
+      key: 'right',
+      frames: this.anims.generateFrameNumbers('player', { start: 143, end: 151 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    this.anims.create({
+      key: 'down',
+      frames: this.anims.generateFrameNumbers('player', { start: 130, end: 138 }),
+        frameRate: 10,
+        repeat: -1
+    });
+    this.anims.create({
+      key: 'up',
+      frames: this.anims.generateFrameNumbers('player', { start: 104, end: 112 }),
+        frameRate: 10,
+        repeat: -1
+    });
+
   }
   function update() {
     this.physics.collide(this.player, this.layerEau);
+    for(let cur_player in otherPlayers) {
+      this.physics.collide(otherPlayers[cur_player],this.layerEau)
+    }
   }
 
   function updateOtherPlayers(scene) {
     for (let id in playersData) {
       if (id !== socket.id) {
-        // Si le joueur existe déjà, mettez à jour sa position
+
         if (otherPlayers[id]) {
             const otherPlayer = otherPlayers[id];
             const newX = playersData[id].x;
             const newY = playersData[id].y;
             const newDirection = playersData[id].direction;
 
-            // Mettre à jour la position
             const distance = Phaser.Math.Distance.Between(
               otherPlayer.x, 
               otherPlayer.y,
@@ -196,20 +201,8 @@ var config = {
             //if(newDirection.x == "n" && newDirection.y == "n")//(distance > 10)
               otherPlayer.setPosition(newX, newY);
             otherPlayer.direction = newDirection;
-            // Vérifier si le joueur est en mouvement
-            //if (otherPlayer.oldX !== newX || otherPlayer.oldY !== newY) {
-            //    otherPlayer.anims.play(newDirection, true);
-            //} else {
-            //    otherPlayer.anims.stop();
-            //    otherPlayer.setFrame(1); // Frame statique
-            //}
 
-            // Stocker la position actuelle comme ancienne
-            //otherPlayer.oldX = newX;
-            //otherPlayer.oldY = newY;
           } else {
-            // Sinon, créez le joueur
-            
             const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false)
             console.log(otherPlayer)
             scene.add.existing(otherPlayer);
@@ -218,6 +211,18 @@ var config = {
             otherPlayer.oldY = playersData[id].y;
             //otherPlayer.anims.play(playersData[id].direction, true);
             otherPlayers[id] = otherPlayer;
+            scene.physics.add.collider(
+              otherPlayer,
+              scene.layerEau
+            );
+            scene.physics.add.collider(
+              otherPlayer,
+              scene.oakPlank
+            );
+            scene.physics.add.collider(
+              otherPlayer,
+              scene.berryBush
+            );
         }
       }
     }
