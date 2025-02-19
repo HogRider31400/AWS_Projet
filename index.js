@@ -37,12 +37,28 @@ let layers = tilemap.layers
   Pour chaque tile ayant une propriété, la seule prop requise est son nom
   Le reste est en bonus et aux soins du codeur de vérifier 
 */
-let tiles_props = tilemap.tilesets[0].tiles
+
+let tiles_props = []
+let acc = 0;
+
+for(let cur_tileset_id in tilemap.tilesets){
+  let cur_tileset = tilemap.tilesets[cur_tileset_id]
+
+  for(let c_id in cur_tileset.tiles) {
+    let cur = cur_tileset.tiles[c_id]
+    cur.id += cur_tileset.firstgid
+    tiles_props.push(cur)
+  }
+
+}
+
+console.log(tiles_props)
 
 for(let layer_id in layers) {
   let layer = layers[layer_id]
   for(let tile_id in layer.data) {
     let tile = layer.data[tile_id]
+    console.log(tile)
     let props_array = null;
     //Le pb c que les props sont sous array
     for(let p_tile_id in tiles_props){
@@ -68,6 +84,8 @@ for(let layer_id in layers) {
     cur_id++;
   }
 }
+
+console.log(map)
 
 //En assumant des tiles de 32x32
 function get_pos(item) {
