@@ -34,6 +34,7 @@ var config = {
     // Charger les sprites correctement
     this.load.image('pickUpIcon', '/static/sprite_sheets/PickUp.png');
     this.load.image('tiles', 'static/tilemaps/TileSet_V2.png');
+    this.load.image('vegetation', 'static/tilemaps/vegetation.png');
     //this.load.image('Water', 'static/tilemaps/water_animation_spritesheet.png');
     this.load.tilemapTiledJSON('map', 'static/tilemaps/map_test5.tmj')
     this.load.spritesheet('player', '/static/sprite_sheets/playerr.png', { frameWidth: 64, frameHeight: 64 });
@@ -41,25 +42,58 @@ var config = {
 
   function create () {
 
+    // On init le joueur avant tout
+    this.player = new Player(this, 300,300, true)
+    player = this.player;
+
+
     const map = this.add.tilemap('map')
     console.log(map);
     //on créé le jeu de tuile avec son nom et l'image dont on a besoin
     const tileset1 = map.addTilesetImage('TileSet_V2', 'tiles');
+    const tileset2 = map.addTilesetImage('vegetation', 'vegetation');
     //const tileset2 = map.addTilesetImage('water_animation_spritesheet', 'Water');
     this.layerEau = map.createLayer('island', [tileset1]); 
+    this.mapElements = map.createLayer('elements', [tileset2]); 
     let layerEau = this.layerEau
 
     this.physics.world.setBounds(0, 0, 800 * 8, 600 * 8);
 
+    let berryBushes = this.mapElements.filterTiles(tile => {
+      return tile.properties && tile.properties.name == "berryBush";
+    });
+
+    let woodPiles = this.mapElements.filterTiles(tile => {
+      return tile.properties && tile.properties.name == "woodPile";
+    });
+
+    console.log(berryBushes)
+    this.elements = []
+    for(let berryBush_i in berryBushes) {
+      let berryBush = new BerryBush(this, berryBushes[berryBush_i].pixelX + 16, berryBushes[berryBush_i].pixelY + 16)
+      this.elements.push(berryBush)
+        
+      this.physics.add.collider(this.player, berryBush, function() {
+        console.log('Collision avec berry bush !');
+      });
+    }
+
+    for(let woodPile_i in woodPiles) {
+      let woodPile = new BerryBush(this, woodPiles[woodPile_i].pixelX + 16, woodPiles[woodPile_i].pixelY + 16)
+      this.elements.push(woodPile)
+        
+      this.physics.add.collider(this.player, woodPile, function() {
+        console.log('Collision avec woodPile !');
+      });
+    }
+
     this.berryBush = new BerryBush(this, 200, 200)
     this.oakPlank = new OakPlanks(this, 250, 200)
-    this.player = new Player(this, 300,300, true)
-    player = this.player;
-
-    this.elements = [
+    /*this.elements = [
       this.berryBush,
       this.oakPlank
-    ]
+    ]*/
+    console.log(this.elements)
 
     this.cameras.main.startFollow(this.player, true);
     this.physics.add.collider(
@@ -113,6 +147,7 @@ var config = {
       })
     })
     
+
 
     this.add.existing(this.berryBush)
     this.add.existing(this.oakPlank)
