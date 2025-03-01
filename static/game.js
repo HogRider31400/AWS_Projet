@@ -70,25 +70,30 @@ var config = {
     console.log(berryBushes)
     this.elements = []
     for(let berryBush_i in berryBushes) {
-      let berryBush = new BerryBush(this, berryBushes[berryBush_i].pixelX + 16, berryBushes[berryBush_i].pixelY + 16)
+      let berryBush = new BerryBush(this, berryBushes[berryBush_i].pixelX + 16, berryBushes[berryBush_i].pixelY + 16, berryBushes[berryBush_i].y + "/" + berryBushes[berryBush_i].x, berryBushes[berryBush_i])
+      console.log(berryBushes[berryBush_i])
       this.elements.push(berryBush)
         
       this.physics.add.collider(this.player, berryBush, function() {
         console.log('Collision avec berry bush !');
       });
+
+      this.add.existing(berryBush)
     }
 
     for(let woodPile_i in woodPiles) {
-      let woodPile = new BerryBush(this, woodPiles[woodPile_i].pixelX + 16, woodPiles[woodPile_i].pixelY + 16)
+      let woodPile = new OakPlanks(this, woodPiles[woodPile_i].pixelX + 16, woodPiles[woodPile_i].pixelY + 16 , woodPiles[woodPile_i].y + "/" + woodPiles[woodPile_i].x, woodPiles[woodPile_i])
       this.elements.push(woodPile)
         
       this.physics.add.collider(this.player, woodPile, function() {
         console.log('Collision avec woodPile !');
       });
+
+      this.add.existing(woodPile)
     }
 
-    this.berryBush = new BerryBush(this, 200, 200)
-    this.oakPlank = new OakPlanks(this, 250, 200)
+    //this.berryBush = new BerryBush(this, 200, 200)
+    //this.oakPlank = new OakPlanks(this, 250, 200)
     /*this.elements = [
       this.berryBush,
       this.oakPlank
@@ -132,47 +137,63 @@ var config = {
 
     socket.on('remove', (data) => {
       if(data.item_id) {
-        if(data.item_id == "1") {
-          this.berryBush.isNowDepleted()
+        for(let d_i in this.elements){
+          let c_elem = this.elements[d_i]
+          if(c_elem.id == data.item_id) c_elem.isNowDepleted()
         }
       }
     })
 
-    this.player.onAction('pickUpBerry', () => {
+    this.player.onAction('pickUpBerry', (berry_id) => {
       socket.emit('action', {
         type : 'pickUp',
         item_type : "berryBush",
-        item_id : "1",
+        item_id : berry_id,
         player : socket.id
       })
+      console.log("siuuu")
     })
+
+    this.player.onAction('pickUpWood', (wood_id) => {
+      socket.emit('action', {
+        type : 'pickUp',
+        item_type : "woodPlank",
+        item_id : wood_id,
+        player : socket.id
+      })
+      console.log("siuuu")
+    })
+    
     
 
 
-    this.add.existing(this.berryBush)
-    this.add.existing(this.oakPlank)
+    //this.add.existing(this.berryBush)
+    //this.add.existing(this.oakPlank)
     this.add.existing(this.player)
+    this.player.initIndicator()
 
-    this.physics.add.collider(this.player, this.berryBush, function() {
-      console.log('Collision avec berry bush !');
-    });
-    this.physics.add.collider(this.player, this.oakPlank, function() {
-      console.log('Collision avec oak plank !');
-    });
+    //this.physics.add.collider(this.player, this.berryBush, function() {
+    //  console.log('Collision avec berry bush !');
+    //});
+    //this.physics.add.collider(this.player, this.oakPlank, function() {
+    //  console.log('Collision avec oak plank !');
+    //});
 
     this.events.on('update', () => {
+      this.player.canInteract = null;
+      for(let cur of this.elements){
         const distance = Phaser.Math.Distance.Between(
             this.player.x, 
             this.player.y,
-            this.berryBush.x, 
-            this.berryBush.y
+            cur.x, 
+            cur.y
         );
 
+        //console.log(distance,cur,this.player)
+
         if(distance < 50) 
-          this.player.canInteract = "berryBush";
-        else
-        this.player.canInteract = false; 
-    }); 
+          this.player.canInteract = cur;
+      }}); 
     this.sendPlayerPosition = (x,y) => {
         socket.emit('mouvement', {
             x: player.x,
@@ -246,17 +267,12 @@ var config = {
             otherPlayer.oldY = playersData[id].y;
             //otherPlayer.anims.play(playersData[id].direction, true);
             otherPlayers[id] = otherPlayer;
+            for(let elem_i of scene.elements) {
+              scene.physics.add.collider(otherPlayer, scene.elements[elem_i])
+            }
             scene.physics.add.collider(
               otherPlayer,
               scene.layerEau
-            );
-            scene.physics.add.collider(
-              otherPlayer,
-              scene.oakPlank
-            );
-            scene.physics.add.collider(
-              otherPlayer,
-              scene.berryBush
             );
         }
       }

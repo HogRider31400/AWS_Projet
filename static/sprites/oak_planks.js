@@ -1,8 +1,10 @@
 export class OakPlanks extends Phaser.GameObjects.Sprite {
-    constructor (scene, x, y, id)
+    constructor (scene, x, y, id, tile)
     {
         super(scene, x, y);
         this.id = id;
+        this.type = "wood"
+        this.tile = tile;
         if (!scene.textures.exists('woodSquare')) {
             let graphics = scene.add.graphics();
             graphics.fillStyle(0xDEB887); // Chêne
@@ -11,7 +13,7 @@ export class OakPlanks extends Phaser.GameObjects.Sprite {
             graphics.destroy();
         }
 
-        this.setTexture('woodSquare');
+        //this.setTexture('woodSquare');
         this.setPosition(x, y);
         scene.physics.world.enable(this);
         this.body.setImmovable(true); //Sinon, quand collision alors ça part dans la direction de la collision
@@ -20,5 +22,12 @@ export class OakPlanks extends Phaser.GameObjects.Sprite {
     preUpdate (time, delta)
     {
         super.preUpdate(time, delta);
+    }
+
+    isNowDepleted()
+    {
+        //this.setTexture("depletedRedSquare")
+        this.tile.tint = 0x7d7d48
+        
     }
 }

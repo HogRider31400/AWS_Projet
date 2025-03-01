@@ -13,18 +13,18 @@ let players = {};
 
 //Ici on a la map, voir avec Nora pour le format et comment faire pour que le serveur l'ait
 let map = {
-  "1" : {
+  /*"6/6" : {
     name : "berryBush",
     capacity : 5,
     y : 6,
     x : 6
   },
-  "2" : {
+  "6/7" : {
     name : "woodPile",
     capacity : 3,
     y : 6,
     x : 7
-  }
+  }*/
 }
 
 
@@ -76,10 +76,16 @@ for(let layer_id in layers) {
       let cur_prop = props_array[cur_prop_id]
       props[cur_prop.name] = cur_prop.value
     }
+
+    let x = Math.floor(tile_id/layer.width)
+    let y = tile_id%layer.width
+
+    let cur_id = x + "/" + y
+
     map[cur_id] = {...props} //là normalement on a récup les props à vérifier
     //On y ajoute aussi son x et son y
-    map[cur_id].y = Math.floor(tile_id/layer.width)
-    map[cur_id].x = tile_id%layer.width
+    map[cur_id].x = x
+    map[cur_id].y = y
 
     cur_id++;
   }
@@ -147,6 +153,7 @@ io.on('connection', (socket) => {
         */
         if(!data.type) return;
         if(data.type == "pickUp") {
+          console.log(data.item_id,map)
           if (!map[data.item_id]) return;
           if (!map[data.item_id].capacity) return;
           if (map[data.item_id].capacity == 0) return;

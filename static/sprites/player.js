@@ -1,3 +1,5 @@
+import { BerryBush } from "./berry_bush.js";
+
 export class Player extends Phaser.GameObjects.Sprite {
     constructor (scene, x, y, active)
     {
@@ -32,7 +34,7 @@ export class Player extends Phaser.GameObjects.Sprite {
             graphics.destroy();
         }
 
-        this.interactionIndicator = scene.add.sprite(0, 0, 'pickUpIcon');
+        this.interactionIndicator = {};
         this.interactionIndicator.visible = false;
 
 
@@ -89,6 +91,11 @@ export class Player extends Phaser.GameObjects.Sprite {
         else{
             this.body.setVelocityY(0);
         }
+    }
+
+    initIndicator() {
+        this.interactionIndicator = this.scene.add.sprite(0, 0, 'pickUpIcon');
+        this.interactionIndicator.visible = false;
     }
 
     preUpdate (time, delta)
@@ -151,12 +158,13 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.last_dir = this.direction
 
         if (this.canInteract) {
-            const berryBush = this.scene.berryBush;
-            const midX = berryBush.x //+ 50 //(this.x + berryBush.x) / 3;
-            const midY = berryBush.y + 50 * (this.y+10 > berryBush.y ? -1 : 1) //this.y //this.y + (this.y + berryBush.y) / 2;
-            
+            const cur = this.canInteract
+            const midX = cur.x //+ 50 //(this.x + berryBush.x) / 3;
+            const midY = cur.y + 50 * (this.y+10 > cur.y ? -1 : 1) //this.y //this.y + (this.y + berryBush.y) / 2;
             this.interactionIndicator.setPosition(midX, midY);
+            this.interactionIndicator.z = 1;
             this.interactionIndicator.visible = true;
+            //console.log(this.interactionIndicator)
         } else {
             this.interactionIndicator.visible = false;
         }
@@ -164,7 +172,10 @@ export class Player extends Phaser.GameObjects.Sprite {
 
         if (this.canInteract && Phaser.Input.Keyboard.JustDown(this.keyA)) {
             console.log('Action avec A réalisée !');
-            if(this.actions.pickUpBerry) this.actions.pickUpBerry();
+            if (this.canInteract.type == "berry")
+                if(this.actions.pickUpBerry) this.actions.pickUpBerry(this.canInteract.id);
+            if (this.canInteract.type == "wood")
+                if(this.actions.pickUpWood) this.actions.pickUpWood(this.canInteract.id);
             //Je sais pas quoi faire ici, mais par exemple on pourrait utiliser la valeur de canInteract pour savoir quoi faire
         }
     }

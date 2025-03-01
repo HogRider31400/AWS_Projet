@@ -1,8 +1,11 @@
 export class BerryBush extends Phaser.GameObjects.Sprite {
-    constructor (scene, x, y, id)
+    constructor (scene, x, y, id, tile)
     {
         super(scene, x, y);
         this.id = id;
+        this.type = "berry"
+        this.tile = tile;
+
         if (!scene.textures.exists('redSquare')) {
             let graphics = scene.add.graphics();
             graphics.fillStyle(0xFF0000); // Rouge
@@ -18,7 +21,7 @@ export class BerryBush extends Phaser.GameObjects.Sprite {
             graphics.destroy();
         }
 
-        this.setTexture('redSquare');
+        //this.setTexture('redSquare');
         this.setPosition(x, y);
         scene.physics.world.enable(this);
         this.body.setImmovable(true); //Sinon, quand collision alors ça part dans la direction de la collision
@@ -31,6 +34,8 @@ export class BerryBush extends Phaser.GameObjects.Sprite {
 
     isNowDepleted()
     {
-        this.setTexture("depletedRedSquare")
+        //this.setTexture("depletedRedSquare")
+        this.tile.tint = 0x7d7d48
+        
     }
 }
