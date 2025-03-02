@@ -36,7 +36,7 @@ export class Player extends Phaser.GameObjects.Sprite {
 
         this.interactionIndicator = {};
         this.interactionIndicator.visible = false;
-
+        this.curPlaying = null;
 
         this.cursors = scene.input.keyboard.createCursorKeys();
         this.keyA = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
@@ -137,10 +137,27 @@ export class Player extends Phaser.GameObjects.Sprite {
 
         if (!moving) {
             this.anims.stop();
-            this.setFrame(1); // Frame statique par défaut (milieu de la rangée bas)
+            this.setFrame(1); //Frame statique par défaut (milieu de la rangée bas)
+            this.curPlaying = null;
+            //Penser à stop l'audio
         }
 
         this.applyMovement();
+
+        let tileX = Math.floor(this.x / 32) 
+        let tileY = Math.floor(this.y / 32)
+
+        if(moving && this.scene.layerEau.layer.data[tileX])
+            if(this.scene.layerEau.layer.data[tileX][tileY]) {
+                let cur = this.scene.layerEau.layer.data[tileX][tileY]
+                if(cur.properties.to_play) {
+                    console.log("On devrait jouer", cur.properties.to_play)
+                    if(this.curPlaying != cur.properties.to_play){
+                        this.curPlaying = cur.properties.to_play;
+                        //On ajoute le son à jouer avec 2/3 ifs
+                    }
+                }
+            }
 
         //Mise à jour réseau
         if((this.last_sent > 30 && ((this.last_pos.x != this.x || this.last_pos.y != this.y) || (moving != this.was_moving)))

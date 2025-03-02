@@ -82,6 +82,70 @@
          "spacing":0,
          "tilecount":160,
          "tileheight":32,
+         "tiles":[
+                {
+                 "id":47,
+                 "properties":[
+                        {
+                         "name":"to_play",
+                         "type":"string",
+                         "value":"dirt_sound"
+                        }]
+                }, 
+                {
+                 "id":48,
+                 "properties":[
+                        {
+                         "name":"to_play",
+                         "type":"string",
+                         "value":"grass_sound"
+                        }]
+                }, 
+                {
+                 "id":49,
+                 "properties":[
+                        {
+                         "name":"to_play",
+                         "type":"string",
+                         "value":"grass_sound"
+                        }]
+                }, 
+                {
+                 "id":50,
+                 "properties":[
+                        {
+                         "name":"to_play",
+                         "type":"string",
+                         "value":"grass_sound"
+                        }]
+                }, 
+                {
+                 "id":51,
+                 "properties":[
+                        {
+                         "name":"to_play",
+                         "type":"string",
+                         "value":"grass_sound"
+                        }]
+                }, 
+                {
+                 "id":52,
+                 "properties":[
+                        {
+                         "name":"to_play",
+                         "type":"string",
+                         "value":"grass_sound"
+                        }]
+                }, 
+                {
+                 "id":53,
+                 "properties":[
+                        {
+                         "name":"to_play",
+                         "type":"string",
+                         "value":"sand_sound"
+                        }]
+                }],
          "tilewidth":32
         }, 
         {
