@@ -53,6 +53,20 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.was_moving = false;
         this.actions = {};
 
+        this.sounds = {
+            grass_sound : scene.sound.add('grass_sound'),
+            dirt_sound : scene.sound.add('dirt_sound'),
+            sand_sound : scene.sound.add('sand_sound'),
+        }
+        console.log(this.sounds);
+        this.sounds.grass_sound.loop = true;
+        this.sounds.grass_sound.rate = 5
+        this.sounds.dirt_sound.loop = true;
+        this.sounds.dirt_sound.rate = 5
+        this.sounds.sand_sound.loop = true;
+        this.sounds.sand_sound.rate = 5
+
+
         scene.physics.world.enable(this);
 
         this.canInteract = false; //On met à false quand on peut pas, si on peut alors on a le nom de l'objet (?)
@@ -138,27 +152,38 @@ export class Player extends Phaser.GameObjects.Sprite {
         if (!moving) {
             this.anims.stop();
             this.setFrame(1); //Frame statique par défaut (milieu de la rangée bas)
+            if(this.curPlaying){
+                this.sounds[this.curPlaying].stop();
+            }
             this.curPlaying = null;
-            //Penser à stop l'audio
+            
         }
 
         this.applyMovement();
 
-        let tileX = Math.floor(this.x / 32) 
-        let tileY = Math.floor(this.y / 32)
-
+        let tileX = Math.floor(this.y / 32)
+        let tileY = Math.floor(this.x / 32)
+        //console.log(this.scene.layerEau)
         if(moving && this.scene.layerEau.layer.data[tileX])
             if(this.scene.layerEau.layer.data[tileX][tileY]) {
                 let cur = this.scene.layerEau.layer.data[tileX][tileY]
+                console.log(cur)
                 if(cur.properties.to_play) {
                     console.log("On devrait jouer", cur.properties.to_play)
                     if(this.curPlaying != cur.properties.to_play){
+                        if(this.curPlaying){
+                            this.sounds[this.curPlaying].stop();
+                        }
                         this.curPlaying = cur.properties.to_play;
-                        //On ajoute le son à jouer avec 2/3 ifs
+                        
+                        if(this.sounds[this.curPlaying]){
+                            this.sounds[this.curPlaying].play();
+                        }
                     }
                 }
             }
-
+        this.square.x = this.scene.layerEau.layer.data[tileX][tileY].x * 32
+        this.square.y = this.scene.layerEau.layer.data[tileX][tileY].y * 32
         //Mise à jour réseau
         if((this.last_sent > 30 && ((this.last_pos.x != this.x || this.last_pos.y != this.y) || (moving != this.was_moving)))
             || (this.direction.x != this.last_dir.x || this.direction.y != this.last_dir.y)

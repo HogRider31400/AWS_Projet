@@ -36,6 +36,9 @@ var config = {
     this.load.image('tiles', 'static/tilemaps/TileSet_V2.png');
     this.load.image('vegetation', 'static/tilemaps/vegetation.png');
     //this.load.image('Water', 'static/tilemaps/water_animation_spritesheet.png');
+    this.load.audio('grass_sound', '/static/sounds/grass.wav');
+    this.load.audio('dirt_sound', '/static/sounds/dirt.wav');
+    this.load.audio('sand_sound', '/static/sounds/sand.wav');
     this.load.tilemapTiledJSON('map', 'static/tilemaps/map_test5.tmj')
     this.load.spritesheet('player', '/static/sprite_sheets/playerr.png', { frameWidth: 64, frameHeight: 64 });
   } 
@@ -43,20 +46,24 @@ var config = {
   function create () {
 
     // On init le joueur avant tout
-    this.player = new Player(this, 300,300, true)
+    this.player = new Player(this, 500,500, true)
     player = this.player;
 
-
-    const map = this.add.tilemap('map')
+    
+    this.map = this.add.tilemap('map')
+    const map = this.map
     console.log(map);
     //on créé le jeu de tuile avec son nom et l'image dont on a besoin
     const tileset1 = map.addTilesetImage('TileSet_V2', 'tiles');
     const tileset2 = map.addTilesetImage('vegetation', 'vegetation');
     //const tileset2 = map.addTilesetImage('water_animation_spritesheet', 'Water');
     this.layerEau = map.createLayer('island', [tileset1]); 
+    this.sacs_couchages = map.createLayer('sacs_couchages', [tileset1]);
+    this.campfire = map.createLayer('campfire', [tileset1]);  
+    this.palmier = map.createLayer('palmier', [tileset1]); 
     this.mapElements = map.createLayer('elements', [tileset2]); 
     let layerEau = this.layerEau
-
+    getAnimatedTiles(this);
     this.physics.world.setBounds(0, 0, 800 * 8, 600 * 8);
 
     let berryBushes = this.mapElements.filterTiles(tile => {
@@ -171,7 +178,10 @@ var config = {
     //this.add.existing(this.oakPlank)
     this.add.existing(this.player)
     this.player.initIndicator()
-
+    this.player.square = this.add.graphics();
+    this.player.square.fillStyle(0xff0000, 1);
+    const squareSize = 10;
+    this.player.square.fillRect(-squareSize/2, -squareSize/2, squareSize, squareSize);
     //this.physics.add.collider(this.player, this.berryBush, function() {
     //  console.log('Collision avec berry bush !');
     //});
@@ -231,11 +241,50 @@ var config = {
     });
 
   }
-  function update() {
+  function update(time, delta) {
     this.physics.collide(this.player, this.layerEau);
     for(let cur_player in otherPlayers) {
       this.physics.collide(otherPlayers[cur_player],this.layerEau)
     }
+    handleAnimatedTiles(this,delta)
+  }
+
+  function getAnimatedTiles(scene) {
+    scene.animatedTiles = [];
+  //console.log(scene.map)
+    let tileData = scene.map.tilesets[0].tileData;
+    console.log(tileData)
+    for(let tileId in tileData) {
+      scene.map.layers.forEach(layer => {
+        layer.data.forEach(row => {
+          row.forEach(tile => {
+            //console.log(tile)
+            if (tile.index - scene.map.tilesets[0].firstgid === parseInt(tileId)) {
+              
+              scene.animatedTiles.push({
+                tile,
+                tileAnimationData: tileData[tileId].animation,
+                firstgid: scene.map.tilesets[0].firstgid,
+                elapsedTime: 0
+              });
+            }
+          })
+        })
+      })
+    }
+  }
+
+  function handleAnimatedTiles(scene, delta) {
+    scene.animatedTiles.forEach(animatedTile => {
+      if(!animatedTile.tileAnimationData) return;
+      let animationDuration = animatedTile.tileAnimationData[0].duration * animatedTile.tileAnimationData.length;
+
+      animatedTile.elapsedTime += delta;
+      animatedTile.elapsedTime %= animationDuration;
+
+      const animationIndex = Math.floor(animatedTile.elapsedTime / animatedTile.tileAnimationData[0].duration);
+      animatedTile.tile.index = animatedTile.tileAnimationData[animationIndex].tileid + animatedTile.firstgid;
+    });
   }
 
   function updateOtherPlayers(scene) {
