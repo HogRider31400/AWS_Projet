@@ -1,11 +1,14 @@
 import { BerryBush } from "./berry_bush.js";
-
+import { getTasks } from "../tasks.js";
 export class Player extends Phaser.GameObjects.Sprite {
-    constructor (scene, x, y, active)
+    constructor (scene, x, y, active, role = "player")
     {
         super(scene, x, y, 'player', 0);
         this.scene = scene;
         this.isActive = active;
+        this.role = role;
+        this.inventory = [];
+        this.tasks = getTasks();
         scene.physics.add.existing(this);
         //this.tint = 0x3d3d29
         
@@ -214,10 +217,19 @@ export class Player extends Phaser.GameObjects.Sprite {
 
         if (this.canInteract && Phaser.Input.Keyboard.JustDown(this.keyA)) {
             console.log('Action avec A réalisée !');
-            if (this.canInteract.type == "berry")
-                if(this.actions.pickUpBerry) this.actions.pickUpBerry(this.canInteract.id);
-            if (this.canInteract.type == "wood")
-                if(this.actions.pickUpWood) this.actions.pickUpWood(this.canInteract.id);
+            if (this.canInteract.type == "berry"){
+                if(this.actions.pickUpBerry){
+                    this.actions.pickUpBerry(this.canInteract.id);
+                    this.tasks.pickUpBerry(this,this.canInteract);
+                }
+            }
+            if (this.canInteract.type == "wood"){
+                if(this.actions.pickUpWood) {
+                    this.actions.pickUpWood(this.canInteract.id);
+                    this.tasks.pickUpWood(this, this.canInteract)
+                }
+            }
+            
             //Je sais pas quoi faire ici, mais par exemple on pourrait utiliser la valeur de canInteract pour savoir quoi faire
         }
     }
