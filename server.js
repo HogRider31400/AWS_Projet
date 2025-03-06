@@ -27,8 +27,7 @@ const PORT = 3000;
     }
 })();
 
-
-// Créer le serveur HTTP
+/*
 const server = http.createServer(app);
 
 const io = new SocketIOServer(server, {
@@ -38,7 +37,7 @@ const io = new SocketIOServer(server, {
   }
 });
 
-let lobbies = {}; // Objet pour stocker les lobbies et leurs joueurs
+let lobbies = {}; 
 
 io.on('connection', (socket) => {
     console.log('Nouvel utilisateur connecté :', socket.id);
@@ -62,7 +61,7 @@ io.on('connection', (socket) => {
         console.log('Utilisateur déconnecté :', socket.id);
     });
 });
-
+*/
 
 app.use(express.json());
 
