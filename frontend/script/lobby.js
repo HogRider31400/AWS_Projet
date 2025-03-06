@@ -12,7 +12,6 @@ window.addEventListener('DOMContentLoaded', () => {
       modeDisplay.innerHTML = `Mode: ${roomData.difficulty} | Joueurs: ${roomData.players}`;
       document.body.appendChild(modeDisplay);
       
-      // Génere la grille que la game master a chosi 
       const playersGrid = document.querySelector('.players-grid');
       playersGrid.innerHTML = ''; 
       for(let i = 0; i < roomData.players; i++){
@@ -22,13 +21,11 @@ window.addEventListener('DOMContentLoaded', () => {
         playersGrid.appendChild(cell);
       }
     }
-    
-    // Gestion du bouton "Join Lobby" 
+     
     document.querySelector('.lobby-btn').addEventListener('click', () => {
         const roomData = JSON.parse(localStorage.getItem('roomData'));
         if (roomData) {
             const playersGrid = document.querySelector('.players-grid');
-            // Vérifie si le pseudo est déjà présent dans la grille
             const alreadyJoined = Array.from(playersGrid.children).some(cell => cell.textContent.includes(roomData.pseudo));
             if (alreadyJoined) {
                 alert("Vous avez déjà rejoint le lobby !");

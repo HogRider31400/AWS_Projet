@@ -13,7 +13,6 @@ const gamestatus = {
         duration: 100,
         wood: 0,
       },
-      hutte: true,
     }
   };
 
