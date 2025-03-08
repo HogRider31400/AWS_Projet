@@ -106,11 +106,30 @@ function distance(ax,ay,bx,by) {
 app.use('/static', express.static(__dirname + '/static'))
 
 app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/index.html');
+  res.sendFile(__dirname + '/static/site/html/index1.html');
 });
-app.get('/opti', function (req, res) {
-  res.sendFile(__dirname + '/index opti.html');
+app.get('/regle', function (req, res) {
+  res.sendFile(__dirname + '/static/site/html/regle.html');
 });
+app.get('/connexion', function (req, res) {
+  res.sendFile(__dirname + '/static/site/html/connexion.html');
+});
+app.get('/inscription', function (req, res) {
+  res.sendFile(__dirname + '/static/site/html/inscription.html');
+});
+app.get('/personnage', function (req, res) {
+  res.sendFile(__dirname + '/static/site/html/personnage.html');
+});
+app.get('/lobby', function (req, res) {
+  res.sendFile(__dirname + '/static/site/html/lobby.html');
+});
+
+
+
+app.get('/game', function (req, res) {
+  res.sendFile(__dirname + '/index_jeu.html');
+});
+
 
 io.on('connection', (socket) => {
     console.log(`Joueur connecté : ${socket.id}`);

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscription - Lost Island</title>
+    <link rel="stylesheet" href="/static/site/css/inscription.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Inscription</h1>
+        <form id="registerForm">
+
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+
+            <label for="password">Mot de passe</label>
+            <input type="password" id="password" name="password" required>
+
+            <label for="confirm-password">Confirmer le mot de passe</label>
+            <input type="password" id="confirm-password" name="confirm-password" required>
+
+            <button type="submit" class="cta-button">S'inscrire</button>
+        </form>
+        <p>Déjà un compte ? <a href="connexion">Connectez-vous</a></p>
+    </div>
+
+    <script type="module" src="/static/site/script/backend/database/register.js"></script>
+</body>
+</html>

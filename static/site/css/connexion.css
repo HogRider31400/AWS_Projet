@@ -1,0 +1,82 @@
+body {
+    background : url(../images/bg3.jpg);
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+.container {
+    background-color: rgba(0 ,0, 0, 0.2);
+    background-position: center;
+    background-size: cover;
+    backdrop-filter: blur(40px);
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-family: 'Inter', sans-serif; 
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+    color: #fff;
+}
+
+h1 {
+    color: #FFF;
+    font-size: 40px;
+    margin-bottom: 20px;
+    font-family: 'Poppins', sans-serif;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+label {
+    text-align: left;
+    margin-top: 40px;
+    width: 80%;
+    max-width: 300px;
+}
+
+input {
+    padding: 15px;
+    border-radius: 6px;
+    border: none;
+    margin-top: 25px;
+    width: 80%;
+    max-width: 300px;
+}
+
+.cta-button {
+    background-color: #42b883;
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-top: 1.5rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+
+.cta-button:hover {
+    background-color: #3aa876;
+}
+
+p {
+    margin-top: 1rem;
+}
+
+a {
+    color: #42b883;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}

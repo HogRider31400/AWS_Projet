@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - Connecté</title>
+    <link rel="stylesheet" href="/static/site/css/style.css">
+</head>
+<body>
+    <div id="app">
+        <header>
+            <nav>
+                <div class="logo">
+                    <img src="/static/site/images/logo.png" alt="Logo" class="logo-icon">
+                    <span>Lost Island</span>
+                </div>
+                <div class="nav-links">
+                    <a href="regle" class="nav-link">
+                        <img src="/static/site/images/book-solid.svg" alt="Rules" class="nav-icon">
+                        Règles
+                    </a>
+                    <span class="nav-link">Vous êtes connecté✅ </span>
+                    <a href="#" class="nav-link" id="logout">Déconnexion</a>
+                </div>
+            </nav>
+        </header>
+
+        <main class="centre">
+            <div class="centre-content">
+                <h1>Bienvenue sur Lost Island</h1>
+                <p>Explorez un monde mystérieux rempli d'aventures et de défis.</p>
+                <button class="cta-button">Commencer l'aventure</button>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelector(".cta-button").addEventListener("click", () => {
+                window.location.href = "personnage";
+            });
+
+            // Déconnexion
+            document.getElementById("logout").addEventListener("click", function() {
+                localStorage.removeItem("isLoggedIn"); 
+                window.location.href = "index"; 
+            });
+        });
+    </script>
+</body>
+</html>
