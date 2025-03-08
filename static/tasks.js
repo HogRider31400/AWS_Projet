@@ -1,8 +1,9 @@
-import { BerryBush } from "./berry_bush.js"
+import { BerryBush } from "./sprites/berry_bush.js"
 
 export function getPlayerTasks() {
     return {
         pickUpBerry,
+        pickUpWood,
         dropItem
     };
 }
@@ -10,6 +11,7 @@ export function getPlayerTasks() {
 export function getImpostorTasks() {
     return {
         pickUpBerry,
+        pickUpWood,
         dropItem,
         throwItem,
         burnWood, //il faut trouver du feu premièrerment
@@ -29,6 +31,9 @@ export function getTasks(){
 export function pickUpBerry(player, berryBush) {
     if(!berryBush) return;
 
+    for (let i = 0; i <= berryBush.capacity; i++) {
+
+    }
     player.inventory.push("berryBush");  // Ajoute une baie dans l'inventaire
     console.log("Inventaire :", player.inventory);
     //return player.inventory;

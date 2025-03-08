@@ -1,5 +1,6 @@
 import { BerryBush } from "./berry_bush.js";
-import { getTasks } from "../tasks.js";
+import { getImpostorTasks, getPlayerTasks, getTasks } from "../tasks.js";
+
 export class Player extends Phaser.GameObjects.Sprite {
     constructor (scene, x, y, active, role = "player")
     {
@@ -11,6 +12,13 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.tasks = getTasks();
         scene.physics.add.existing(this);
         //this.tint = 0x3d3d29
+
+        if (role == "player") {
+            this.tasks = getPlayerTasks();
+        } else if (role == "impostor") {
+            this.tasks = getImpostorTasks();
+            this.tint = 0xFF0000; // Rouge pour différencier l'imposteur
+        }
         
         this.body.setCollideWorldBounds(true)
 
@@ -43,6 +51,7 @@ export class Player extends Phaser.GameObjects.Sprite {
 
         this.cursors = scene.input.keyboard.createCursorKeys();
         this.keyA = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
+        this.keyD = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
         this.moveSpeed = 200;
         this.last_sent = 10000;
         this.last_pos = {
@@ -220,7 +229,7 @@ export class Player extends Phaser.GameObjects.Sprite {
             if (this.canInteract.type == "berry"){
                 if(this.actions.pickUpBerry){
                     this.actions.pickUpBerry(this.canInteract.id);
-                    this.tasks.pickUpBerry(this,this.canInteract);
+                    this.tasks.pickUpBerry(this, this.canInteract);
                 }
             }
             if (this.canInteract.type == "wood"){
@@ -229,8 +238,21 @@ export class Player extends Phaser.GameObjects.Sprite {
                     this.tasks.pickUpWood(this, this.canInteract)
                 }
             }
+
+            if (Phaser.Input.Keyboard.JustDown(this.keyD)) {
+                console.log('Action avec D réalisée !', this.inventory);
+                //this.actions.dropItem(this.canInteract.id);
+                this.tasks.dropItem(this); // Appeler la méthode dropItem() pour déposer un objet
+            }
             
             //Je sais pas quoi faire ici, mais par exemple on pourrait utiliser la valeur de canInteract pour savoir quoi faire
+        }
+    }
+
+    onWaterCollision() {
+        console.log("L'imposteur essaie de jeter un objet dans l'eau !", this.inventory);
+        if (Phaser.Input.Keyboard.JustDown(this.keyT)) {
+            getImpostorTasks().throwItem(this);
         }
     }
 }

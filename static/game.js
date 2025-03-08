@@ -39,7 +39,7 @@ var config = {
     this.load.audio('grass_sound', '/static/sounds/grass.wav');
     this.load.audio('dirt_sound', '/static/sounds/dirt.wav');
     this.load.audio('sand_sound', '/static/sounds/sand.wav');
-    this.load.tilemapTiledJSON('map', 'static/tilemaps/map_test5.tmj')
+    this.load.tilemapTiledJSON('map', 'static/tilemaps/map_test.tmj')
     this.load.spritesheet('player', '/static/sprite_sheets/playerr.png', { frameWidth: 64, frameHeight: 64 });
   } 
 
@@ -74,8 +74,9 @@ var config = {
       return tile.properties && tile.properties.name == "woodPile";
     });
 
+////////////OBJETS COLLISIONS////////////
     console.log(berryBushes)
-    this.elements = []
+    this.elements = [] //Ici tous les éléments avec lesquels on peut intéragir
     for(let berryBush_i in berryBushes) {
       let berryBush = new BerryBush(this, berryBushes[berryBush_i].pixelX + 16, berryBushes[berryBush_i].pixelY + 16, berryBushes[berryBush_i].y + "/" + berryBushes[berryBush_i].x, berryBushes[berryBush_i])
       console.log(berryBushes[berryBush_i])
@@ -108,19 +109,26 @@ var config = {
     console.log(this.elements)
 
     this.cameras.main.startFollow(this.player, true);
-    this.physics.add.collider(
+    /*this.physics.add.collider(
       this.player,
       this.layerEau,
       null,
       null,
       this
-    );
+    // );*/
+    if (this.player.role == "impostor") {
+      this.physics.add.collider(this.player, this.layerEau, this.player.onWaterCollision, null, this.player);
+    } else {
+      this.physics.add.collider(this.player, this.layerEau, null, null, this);
+    }
     layerEau.setCollisionBetween(54,104)
     console.log(layerEau.body)
     //layerEau.setTint(0x3d3d29)
     // #999966 pluie ?
     // #3d3d29 nuit ?
 
+
+///////////////SOCKET///////////////
     socket.on('positions', (data) => {
       playersData = data;
       //console.log(data);
@@ -151,6 +159,7 @@ var config = {
       }
     })
 
+    ////ACTIONS DU JOUEUR ENREGISTREES DANS ONACTION////
     this.player.onAction('pickUpBerry', (berry_id) => {
       socket.emit('action', {
         type : 'pickUp',
@@ -158,7 +167,7 @@ var config = {
         item_id : berry_id,
         player : socket.id
       })
-      console.log("siuuu")
+      console.log("onAction : pickUpBerry")
     })
 
     this.player.onAction('pickUpWood', (wood_id) => {
@@ -168,10 +177,18 @@ var config = {
         item_id : wood_id,
         player : socket.id
       })
-      console.log("siuuu")
+      console.log("onAction : pickUpWood")
     })
     
-    
+    this.player.onAction('dropItem', () => {
+      socket.emit('action', {
+        type : 'berryBushDrop',
+        item_type : "berryBush",
+        item_id : "1", //id de n'importe quel objet
+        player : socket.id
+      })
+      console.log("onAction : dropItem");
+    })
 
 
     //this.add.existing(this.berryBush)
