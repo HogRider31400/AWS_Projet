@@ -1,5 +1,5 @@
 import { BerryBush } from "./berry_bush.js";
-import { getImpostorTasks, getPlayerTasks, getTasks } from "../tasks.js";
+import { getImpostorTasks, getPlayerTasks } from "../tasks.js";
 
 export class Player extends Phaser.GameObjects.Sprite {
     constructor (scene, x, y, active, role = "player")
@@ -9,16 +9,13 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.isActive = active;
         this.role = role;
         this.inventory = [];
-        this.tasks = getTasks();
-        scene.physics.add.existing(this);
-        //this.tint = 0x3d3d29
-
         if (role == "player") {
             this.tasks = getPlayerTasks();
         } else if (role == "impostor") {
             this.tasks = getImpostorTasks();
             this.tint = 0xFF0000; // Rouge pour différencier l'imposteur
         }
+        scene.physics.add.existing(this);
         
         this.body.setCollideWorldBounds(true)
 

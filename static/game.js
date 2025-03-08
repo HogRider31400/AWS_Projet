@@ -85,7 +85,6 @@ var config = {
       this.physics.add.collider(this.player, berryBush, function() {
         console.log('Collision avec berry bush !');
       });
-
       this.add.existing(berryBush)
     }
 

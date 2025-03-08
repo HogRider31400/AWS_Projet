@@ -19,31 +19,35 @@ export function getImpostorTasks() {
     };
 }
 
-export function getTasks(){
-    pickUpBerry,
-    pickUpWood,
-    dropItem,
-    throwItem,
-    burnWood, //il faut trouver du feu premièrerment
-    gun
-}
-
 export function pickUpBerry(player, berryBush) {
     if(!berryBush) return;
 
-    for (let i = 0; i <= berryBush.capacity; i++) {
-
+    const capacity = berryBush.tile.properties.capacity;
+    for (let i = 0; i < capacity; i++) {
+        player.inventory.push("berryBush");  // Ajoute une baie dans l'inventaire
     }
-    player.inventory.push("berryBush");  // Ajoute une baie dans l'inventaire
     console.log("Inventaire :", player.inventory);
+
+    berryBush.destroy();
+    player.scene.elements = player.scene.elements.filter(element => element !== berryBush);
+    const elementsLayer = player.scene.map.getLayer('elements').tilemapLayer;
+    elementsLayer.removeTileAt(berryBush.tile.x, berryBush.tile.y);
     //return player.inventory;
 }
 
 export function pickUpWood(player, woodPile) {
     if(!woodPile) return;
 
-    player.inventory.push("woodPile");  // Ajoute une baie dans l'inventaire
+    const capacity = woodPile.tile.properties.capacity;
+    for (let i = 0; i < capacity; i++) {
+        player.inventory.push("woodPile");  // Ajoute du baie dans l'inventaire
+    }
     console.log("Inventaire :", player.inventory);
+
+    woodPile.destroy();
+    player.scene.elements = player.scene.elements.filter(element => element !== woodPile);
+    const elementsLayer = player.scene.map.getLayer('elements').tilemapLayer;
+    elementsLayer.removeTileAt(woodPile.tile.x, woodPile.tile.y);
     //return player.inventory;
 }
 
