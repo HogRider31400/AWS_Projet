@@ -282,6 +282,11 @@ io.on('connection', (socket) => {
         io.emit('positions', players);
     });
 
+    //gestion des Chats 
+    socket.on("chat-message", (data) => {
+      io.emit("chat-message", data);
+   });
+   
     socket.on('action', (data) => {
         /*
         Format de data : un dico avec quelques clés dont 1 systématique "type"
