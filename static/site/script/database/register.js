@@ -10,7 +10,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     }
 
     try {
-        const response = await fetch("http://127.0.0.1:5501/register", {
+        const response = await fetch("/register", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -22,7 +22,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
             if (response.ok) {
                 alert(result.message);
                 localStorage.setItem("isLoggedIn", "true"); 
-                window.location.href = "index1.html"; 
+                window.location.href = "/"; 
             } else {
                 alert(result.error);
             }

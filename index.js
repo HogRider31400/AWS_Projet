@@ -2,15 +2,31 @@ const express = require('express');
 const socketIo = require('socket.io');
 const http = require('http');
 const fs = require('node:fs');
-
+const { PrismaClient } = require('@prisma/client')
+const bcrypt = require('bcrypt');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
+const { randomUUID } = require('crypto');
+const cookieParser = require('cookie-parser');
+process.env['DATABASE_URL'] = 'file:./prisma/dev.db';
 
+const saltRounds = 10;
+const prisma = new PrismaClient();
 const PORT = 80;
-
 let players = {};
 
+
+(async () => {
+  try {
+      await prisma.$connect();
+      console.log("Connexion à SQLite réussie !");
+  } catch (error) {
+      console.error("Erreur de connexion à SQLite :", error);
+  }
+})();
+app.use(express.json());
+app.use(cookieParser());
 //Ici on a la map, voir avec Nora pour le format et comment faire pour que le serveur l'ait
 let map = {
   /*"6/6" : {
@@ -52,13 +68,13 @@ for(let cur_tileset_id in tilemap.tilesets){
 
 }
 
-console.log(tiles_props)
+//console.log(tiles_props)
 
 for(let layer_id in layers) {
   let layer = layers[layer_id]
   for(let tile_id in layer.data) {
     let tile = layer.data[tile_id]
-    console.log(tile)
+    //console.log(tile)
     let props_array = null;
     //Le pb c que les props sont sous array
     for(let p_tile_id in tiles_props){
@@ -91,40 +107,145 @@ for(let layer_id in layers) {
   }
 }
 
-console.log(map)
+//console.log(map)
 
 //En assumant des tiles de 32x32
 function get_pos(item) {
   return [32*item.x,32*item.y]
 }
 
-console.log(map)
 function distance(ax,ay,bx,by) {
   return Math.sqrt(Math.pow(ax - bx,2) + Math.pow(ay - by,2))
 }
 
+async function isConnected(req){
+  if(req.cookies.token){
+    
+    const token = await prisma.token.findUnique({ where : { token : req.cookies.token }})
+    console.log(token)
+    console.log((new Date() / 1000) - (new Date(token.createdAt) / 1000))
+    if (token){
+      const diff = (new Date() / 1000) - (new Date(token.createdAt) / 1000);
+      if (diff <= (2 * 3600)) return true;
+    }
+  } 
+  return false;
+}
+
 app.use('/static', express.static(__dirname + '/static'))
 
-app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/static/site/html/index1.html');
+app.get('/', async function (req, res) {
+  if(await isConnected(req)) 
+    res.sendFile(__dirname + '/static/site/html/index1.html');
+  else
+    res.sendFile(__dirname + '/static/site/html/index.html');
 });
-app.get('/regle', function (req, res) {
+app.get('/index', async function (req, res) {
+  if(await isConnected(req)) 
+    res.sendFile(__dirname + '/static/site/html/index1.html');
+  else
+    res.sendFile(__dirname + '/static/site/html/index.html');
+});
+app.get('/regle', async function (req, res) {
   res.sendFile(__dirname + '/static/site/html/regle.html');
 });
-app.get('/connexion', function (req, res) {
-  res.sendFile(__dirname + '/static/site/html/connexion.html');
+app.get('/connexion', async function (req, res) {
+  if(await isConnected(req)) 
+    res.redirect('/');
+  else
+    res.sendFile(__dirname + '/static/site/html/connexion.html');
 });
-app.get('/inscription', function (req, res) {
-  res.sendFile(__dirname + '/static/site/html/inscription.html');
+app.get('/inscription', async function (req, res) {
+  if(await isConnected(req)) 
+    res.redirect('/');
+  else
+    res.sendFile(__dirname + '/static/site/html/inscription.html');
 });
-app.get('/personnage', function (req, res) {
-  res.sendFile(__dirname + '/static/site/html/personnage.html');
+app.get('/personnage', async function (req, res) {
+  if(!await isConnected(req)) 
+    res.redirect('/');
+  else
+    res.sendFile(__dirname + '/static/site/html/personnage.html');
 });
-app.get('/lobby', function (req, res) {
-  res.sendFile(__dirname + '/static/site/html/lobby.html');
+app.get('/lobby', async function (req, res) {
+  if(!await isConnected(req)) 
+    res.redirect('/');
+  else
+    res.sendFile(__dirname + '/static/site/html/lobby.html');
 });
 
+app.get('/disconnect', async function (req, res) {
+  if(await isConnected(req)) 
+    res.cookie('token', '' , { maxAge: 900000, httpOnly: true });
+  res.redirect('/');
 
+});
+
+//Ici on met socketId : token je pense (ou l'inverse en fonction des besoins)
+connected_players = {}
+
+app.post("/connect_to_game", async (req,res) => {
+  if(!await isConnected(req)) {
+    res.status(400).json({ error: "Token inconnu ou trop ancien." });
+    return;
+  }
+  console.log(req.body)
+
+  const {socketId} = req.body;
+  connected_players[req.cookies.token] = socketId;
+  console.log(connected_players)
+  res.status(201).json({ message: "Connexion réussie" });
+})
+
+app.post("/register", async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ error: "Tous les champs sont requis." });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    try {
+        const user = await prisma.user.create({
+            data: {
+                email,
+                password: hashedPassword,
+            },
+        });
+        res.status(201).json({ message: "Inscription réussie !" });
+    } catch (error) {
+        res.status(400).json({ error: "Email déjà utilisé." });
+    }
+});
+app.post("/login", async (req, res) => {
+    console.log(req.body);
+    console.log(req.cookies);
+    if (await isConnected(req)) return;
+    
+
+    const { email, password } = req.body;
+
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+        return res.status(400).json({ error: "Utilisateur non trouvé" });
+    }
+
+    const token = await bcrypt.hash(randomUUID(), 2);
+    res.cookie('token',token , { maxAge: 900000, httpOnly: true });
+    await prisma.token.create({
+      data: {
+          token,
+          email,
+      },
+    });
+    const isValid = await bcrypt.compare(password, user.password);
+    if (!isValid) {
+        return res.status(400).json({ error: "Mot de passe incorrect" });
+    }
+
+    res.json({ message: "Connexion réussie !" });
+});
 
 app.get('/game', function (req, res) {
   res.sendFile(__dirname + '/index_jeu.html');
