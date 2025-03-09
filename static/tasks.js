@@ -1,10 +1,12 @@
 import { BerryBush } from "./sprites/berry_bush.js"
+import { OakPlanks } from "./sprites/oak_planks.js"
 
 export function getPlayerTasks() {
     return {
         pickUpBerry,
         pickUpWood,
-        dropItem
+        dropItem,
+        openChest
     };
 }
 
@@ -13,6 +15,7 @@ export function getImpostorTasks() {
         pickUpBerry,
         pickUpWood,
         dropItem,
+        openChest,
         throwItem,
         burnWood, //il faut trouver du feu premièrerment
         gun
@@ -22,6 +25,7 @@ export function getImpostorTasks() {
 export function pickUpBerry(player, berryBush) {
     if(!berryBush) return;
 
+    console.log("pickup Item : ", berryBush);
     const capacity = berryBush.tile.properties.capacity;
     for (let i = 0; i < capacity; i++) {
         player.inventory.push("berryBush");  // Ajoute une baie dans l'inventaire
@@ -38,6 +42,7 @@ export function pickUpBerry(player, berryBush) {
 export function pickUpWood(player, woodPile) {
     if(!woodPile) return;
 
+    console.log("pickup Item : ", woodPile);
     const capacity = woodPile.tile.properties.capacity;
     for (let i = 0; i < capacity; i++) {
         player.inventory.push("woodPile");  // Ajoute du baie dans l'inventaire
@@ -53,23 +58,41 @@ export function pickUpWood(player, woodPile) {
 
 
 export function dropItem(player) {
-        if (player.inventory.length === 0) {
-            console.log(`Le joueur n'a rien à déposer.`);
-            return;
-        }
+
         if (player.inventory.length > 0) {
             // On récupère l'objet à déposer
             const itemToDrop = player.inventory.pop(); // On enlève l'objet de l'inventaire
-            
-            const dropX = player.x + 50; // Par exemple, à 50 pixels devant lui sur l'axe X
-            const dropY = player.y; // La position Y reste la même (vous pouvez ajuster en fonction de la direction si nécessaire)
-    
-            const dropBerryBush = new BerryBush(player.scene, dropX, dropY);
-            player.scene.add.existing(dropBerryBush);
-            player.scene.physics.add.collider(player, dropBerryBush, function() {
-                console.log('Collision avec berry bush !');
-            });
-            player.scene.objects.push(dropBerryBush);
+
+            const dropTileX = Math.floor((player.x + 50) / 32); // Conversion en coordonnées de tile
+            const dropTileY = Math.floor(player.y / 32);
+
+            //On doit refaire une tile sur le calque élément
+            const layer = player.scene.map.getLayer('elements').tilemapLayer;
+
+            let item; //PENSER QUE LES ID SONT DECALEES SI ON A PLS TILESET !!!
+            if (itemToDrop == "berryBush") {
+                const tile = layer.putTileAt(453, dropTileX, dropTileY);
+                tile.properties = {
+                    name: "berryBush",
+                    capacity: 5
+                };
+                item = new BerryBush(player.scene, dropTileX * 32 + 16, dropTileY * 32 + 16, dropTileY + "/" + dropTileX, layer.getTileAt(dropTileX, dropTileY));
+            } else if (itemToDrop == "woodPile") {
+                const tile = layer.putTileAt(493, dropTileX, dropTileY);
+                tile.properties = {
+                    name: "woodPile",
+                    capacity: 4
+                };
+                item = new OakPlanks(player.scene, dropTileX * 32 + 16, dropTileY * 32 + 16, dropTileY + "/" + dropTileX, layer.getTileAt(dropTileX, dropTileY));
+            }
+
+            if (item) {
+                player.scene.elements.push(item);
+                player.scene.physics.add.collider(player, item, function() {
+                    console.log('Collision avec berry bush !');
+                });
+                player.scene.add.existing(item);
+            }
     
             console.log("Inventaire après dépôt :", player.inventory);
         } else {
@@ -77,8 +100,27 @@ export function dropItem(player) {
         }
 }
 
+export function openChest(player, chest) {
+    const layer = player.scene.map.getLayer('elements').tilemapLayer;
+
+    const x = layer.worldToTileX(chest.x);
+    const y = layer.worldToTileX(chest.y);
+    
+    const chestOpenedTopLeft = 461;
+    const chestOpenedTopRight = 462;
+    const chestOpenedBottomLeft = 469;
+    const chestOpenedBottomRight = 470;
+
+    // Placer chaque tuile à la bonne position
+    layer.putTileAt(chestOpenedTopLeft, x - 1, y - 1);
+    layer.putTileAt(chestOpenedTopRight, x, y - 1);
+    layer.putTileAt(chestOpenedBottomLeft, x - 1, y);
+    layer.putTileAt(chestOpenedBottomRight, x, y);
+}
+
 ////ACTIONS DE L'IMPOSTEUR///
 export function throwItem(player) {
+    console.log("throwItem")
     if (player.inventory.length === 0) {
         console.log(`Le joueur n'a rien à déposer.`);
         return;
