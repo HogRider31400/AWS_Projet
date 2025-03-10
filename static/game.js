@@ -22,14 +22,14 @@ var config = {
       update
     }
   }
-  const socket = io();
-  let playersData = {};
-  let otherPlayers = {}; 
-  let playersGroup;
-  let player;
-  let cursors;
+const socket = await io();
+let playersData = {};
+let otherPlayers = {}; 
+let playersGroup;
+let player;
+let cursors;
 
-  var game = new Phaser.Game(config)
+var game = new Phaser.Game(config)
 
   function preload() {
     // Charger les sprites correctement
@@ -166,6 +166,19 @@ var config = {
         }
       }
     })
+
+    console.log(socket.id)
+    fetch("/connect_to_game", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ socketId : socket.id })
+    }).then((response) => {
+      if(!response.ok) console.log("Vous n'avez pas été connecté.");
+      else console.log("Vous avez été connecté")
+    })
+
 
     ////ACTIONS DU JOUEUR ENREGISTREES DANS ONACTION////
     this.player.onAction('pickUpBerry', (berry_id) => {

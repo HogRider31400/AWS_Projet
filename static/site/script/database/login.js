@@ -16,7 +16,7 @@ document.querySelector('form').addEventListener('submit', async function(event) 
     if (response.ok) {
         alert("Connexion réussie !");
         localStorage.setItem("isLoggedIn", "true"); 
-        window.location.href = "index1.html"; 
+        window.location.href = "/"; 
     } else {
         alert("Échec de la connexion : " + result.error);
     }

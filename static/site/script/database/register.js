@@ -22,7 +22,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
             if (response.ok) {
                 alert(result.message);
                 localStorage.setItem("isLoggedIn", "true"); 
-                window.location.href = "index1.html"; 
+                window.location.href = "/"; 
             } else {
                 alert(result.error);
             }
