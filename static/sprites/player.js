@@ -252,7 +252,7 @@ export class Player extends Phaser.GameObjects.Sprite {
                 if (this.actions.openChest) {
                     this.actions.openChest(this.canInteract.id);
                     this.tasks.openChest(this, this.canInteract);
-                    this.canInteract.chestTypeOpened();
+                    this.canInteract.chestTypeOpened(); //on ne peut plus ouvrir le coffre
                     //créer une fonction dans task pour mettre visuellement l'objet ?
                 }
             }
@@ -263,8 +263,8 @@ export class Player extends Phaser.GameObjects.Sprite {
 
         if (Phaser.Input.Keyboard.JustDown(this.keyD)) {
             console.log('Action avec D réalisée !');
-            this.actions.dropItem(this.canInteract.id);
-            this.tasks.dropItem(this); // Appeler la méthode dropItem() pour déposer un objet
+            const item = this.tasks.dropItem(this);
+            this.actions.dropItem(item);
         }
 
     }
@@ -272,13 +272,13 @@ export class Player extends Phaser.GameObjects.Sprite {
     onWaterCollision() {
         console.log("L'imposteur essaie de jeter un objet dans l'eau !", this.inventory);
         if (Phaser.Input.Keyboard.JustDown(this.keyT)) {
-            getImpostorTasks().throwItem(this);
+            this.tasks.throwItem(this);
         }
     }
     fireCollision() {
         console.log("L'imposteur essaie de jeter un objet dans le feu !", this.inventory);
         if (Phaser.Input.Keyboard.JustDown(this.keyT)) {
-            getImpostorTasks().throwItem(this);
+            this.tasks.throwItem(this);
         }
     }
 

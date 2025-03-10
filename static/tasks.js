@@ -66,6 +66,7 @@ export function dropItem(player) {
             const dropTileX = Math.floor((player.x + 50) / 32); // Conversion en coordonnées de tile
             const dropTileY = Math.floor(player.y / 32);
 
+            //////////PARTIE CREER L'OBJET SUR LA CARTE//////////
             //On doit refaire une tile sur le calque élément
             const layer = player.scene.map.getLayer('elements').tilemapLayer;
 
@@ -85,7 +86,6 @@ export function dropItem(player) {
                 };
                 item = new OakPlanks(player.scene, dropTileX * 32 + 16, dropTileY * 32 + 16, dropTileY + "/" + dropTileX, layer.getTileAt(dropTileX, dropTileY));
             }
-
             if (item) {
                 player.scene.elements.push(item);
                 player.scene.physics.add.collider(player, item, function() {
@@ -93,8 +93,20 @@ export function dropItem(player) {
                 });
                 player.scene.add.existing(item);
             }
+            ////////////////////////////////////////
+            
+            /////On enlève dans l'inventaire le bon nombre d'objet en fonction de sa capacity
+            let count = 1;
+            player.inventory = player.inventory.filter(itemInventory => {
+                if (itemInventory === itemToDrop && count < item.tile.properties.capacity) {
+                    count++;
+                    return false;
+                }
+                return true;
+            });
     
             console.log("Inventaire après dépôt :", player.inventory);
+            return item
         } else {
             console.log("L'inventaire est vide, impossible de déposer un objet.");
         }
