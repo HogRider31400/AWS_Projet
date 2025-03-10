@@ -263,7 +263,7 @@ export class Player extends Phaser.GameObjects.Sprite {
 
         if (Phaser.Input.Keyboard.JustDown(this.keyD)) {
             console.log('Action avec D réalisée !');
-            //this.actions.dropItem(this.canInteract.id);
+            this.actions.dropItem(this.canInteract.id);
             this.tasks.dropItem(this); // Appeler la méthode dropItem() pour déposer un objet
         }
 
@@ -281,4 +281,5 @@ export class Player extends Phaser.GameObjects.Sprite {
             getImpostorTasks().throwItem(this);
         }
     }
+
 }
