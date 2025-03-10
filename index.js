@@ -282,10 +282,7 @@ io.on('connection', (socket) => {
         io.emit('positions', players);
     });
 
-    //******************************************************************************gestion des Chats 
-  //   socket.on("chat-message", (data) => {
-  //     io.emit("chat-message", data);
-  //  });
+   
 
     socket.on('action', (data) => {
         /*
@@ -319,14 +316,22 @@ io.on('connection', (socket) => {
           }
         }
       })
-
-    // Gérer la déconnexion
-    socket.on('disconnect', () => {
-        console.log(`Joueur déconnecté : ${socket.id}`);
-        delete players[socket.id]; // Retirer le joueur de la liste
-        io.emit('positions', players); // Mettre à jour la liste pour tous
+//******************************************************************************gestion des Chats 
+        socket.on("chat-message", (data) => {
+            console.log(`Message reçu de ${data.player}: ${data.message}`);
+            io.emit("chat-message", data); // Envoie le message à tous les joueurs
+        });
+    
+        socket.on("disconnect", () => {
+            console.log(`Utilisateur déconnecté : ${socket.id}`);
+            delete players[socket.id]; // Retirer le joueur de la liste
+            io.emit('positions', players); // Mettre à jour la liste pour tous
+        });
     });
-});
+    
+  
+    
+
 
 server.listen(PORT, '0.0.0.0', () => {
     console.log(`Serveur en écoute sur http://localhost:${PORT}`);
