@@ -573,6 +573,11 @@ io.on('connection', (socket) => {
           }
         }
       })
+  //Gestion de chat 
+  socket.on("chat-message", (data) => {
+            console.log(`Message reçu de ${data.player}: ${data.message}`);
+            io.emit("chat-message", data); // Envoie le message à tous les joueurs
+        });
 
     // Gérer la déconnexion
     socket.on('disconnect', () => {
