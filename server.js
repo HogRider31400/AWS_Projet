@@ -86,7 +86,9 @@ app.post("/register", async (req, res) => {
         res.status(400).json({ error: "Email déjà utilisé." });
     }
 });
+ 
 
+    
 app.post("/login", async (req, res) => {
     const { email, password } = req.body;
 
