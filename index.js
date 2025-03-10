@@ -45,7 +45,7 @@ let map = {
 
 
 
-let tilemap = JSON.parse(fs.readFileSync('./static/tilemaps/map_test5.tmj', 'utf8'));
+let tilemap = JSON.parse(fs.readFileSync('./static/tilemaps/map_test.tmj', 'utf8'));
 let cur_id = 3
 
 let layers = tilemap.layers
@@ -97,9 +97,12 @@ for(let layer_id in layers) {
     let y = tile_id%layer.width
 
     let cur_id = x + "/" + y
-
-    map[cur_id] = {...props} //là normalement on a récup les props à vérifier
+    if(map[cur_id]){
+      map[cur_id] = {...props, ...map[cur_id]}
+    }
+    else map[cur_id] = {...props} //là normalement on a récup les props à vérifier
     //On y ajoute aussi son x et son y
+    if(props.name == "berryBush") console.log(props, map[cur_id])
     map[cur_id].x = x
     map[cur_id].y = y
 
@@ -192,7 +195,8 @@ app.post("/connect_to_game", async (req,res) => {
   console.log(req.body)
 
   const {socketId} = req.body;
-  connected_players[req.cookies.token] = socketId;
+  if(!connected_players[socketId]) connected_players[socketId] = {}
+  connected_players[socketId].token = req.cookies.token;
   console.log(connected_players)
   res.status(201).json({ message: "Connexion réussie" });
 })
@@ -251,17 +255,217 @@ app.get('/game', function (req, res) {
   res.sendFile(__dirname + '/index_jeu.html');
 });
 
+//Les constantes de tâches
+const GATHER_BERRIES = "Récolter des baies";
+const GATHER_WOOD = "Récolter des branches";
+const GATHER_STONE = "Récolter des cailloux";
+const OPEN_CHEST = "Ouvrir un coffre";
+const EQUIP_BUCKET = "Equiper un seau";
+const FILL_BUCKET = "Remplir un seau d'eau";
+
+const T_THROW_RES = "Jeter des ressources";
+const T_SET_ONFIRE = "Mettre le feu";
+const T_EQUIP_GUN = "Equiper un pistoler";
+//La fonction de jeu
+
+const tasks = {
+  castaways: [
+    {
+      name : GATHER_BERRIES,
+      item_type : "berry",
+      qte : 5
+    },
+    {
+      name : GATHER_WOOD,
+      item_type : "wood",
+      qte : 5
+    },
+    {
+      name : GATHER_STONE,
+      item_type : "stone",
+      qte : 3
+    },
+    {
+      name : OPEN_CHEST,
+      item_type : "chest",
+      qte : 1
+    },
+    {
+      name : EQUIP_BUCKET,
+      item_type : "bucket",
+      qte : 1
+    },
+    {
+      name : FILL_BUCKET,
+      item_type : "bucket",
+      qte : 1
+    },
+  ],
+  traitors: [
+    {
+      name : T_THROW_RES,
+      item_type : "any",
+      qte : 3
+    },
+    {
+      name : T_SET_ONFIRE,
+      item_type : "any",
+      qte : 3
+    },
+    {
+      name : T_EQUIP_GUN,
+      item_type : "gun",
+      qte : 1
+    },
+  ]
+};
+
+//https://stackoverflow.com/questions/951021/what-is-the-javascript-version-of-sleep
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+//https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
+function shuffle(array) {
+  let currentIndex = array.length;
+
+  // While there remain elements to shuffle...
+  while (currentIndex != 0) {
+
+    // Pick a remaining element...
+    let randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+}
+
+
+const g_broadcast = msg => 
+  io.emit('game', {
+    type : "broadcast",
+    message : msg
+  })
+
+async function launch_game(){
+  await sleep(1000)
+  g_broadcast("La partie va commencer")
+  await sleep(1000)
+  //Déroulement du début de la partie
+  //On assigne les rôles, ça s'arrête là un peu
+  let roles = ["Traître", "Survivant", "Survivant", "Survivant"]
+  shuffle(roles)
+  let cur_idx = 0;
+
+
+  Object.keys(players).forEach((socketId) =>  {
+    let cur = players[socketId]
+    let role = roles[cur_idx]
+    players[socketId].role = role
+    players[socketId].tasks = []
+    players[socketId].previousTasks = []
+    connected_players[socketId].socket.emit('game',{
+      type : "assign_role",
+      role : role
+    })
+    cur_idx++;
+    console.log("On file le rôle " + role + " à " + socketId)
+  })
+
+  for(let nb_jours = 1; nb_jours <= 5; nb_jours++){
+    //Déroulement de l'orga d'un jour :
+    //On dit à tout le monde que c'est le jour
+    io.emit('game',{
+      type: 'set_time',
+      cur_day : nb_jours,
+      time : 'day'
+    })
+    //On donne les tâches
+
+    shuffle(tasks.castaways)
+    shuffle(tasks.traitors)
+    let cur_c = 0;
+    Object.keys(players).forEach((socketId) => {
+      let cur = players[socketId]
+      let role = cur.role
+
+      Object.values(players[socketId].tasks).forEach(val => players[socketId].previousTasks.push(val))
+      players[socketId].tasks = []
+      if(role == "Traître"){
+        players[socketId].tasks = [{
+            ...structuredClone(tasks.traitors[0]),
+            completed : false
+          }]
+        }
+      else {
+        for(let _ = 0; _ < 2; _++){
+          players[socketId].tasks.push({
+            ...structuredClone(tasks.castaways[cur_c]),
+            completed : false
+          })
+            cur_c++;
+        }
+      }
+
+      connected_players[socketId].socket.emit('game',{
+        type : "assign_tasks",
+        tasks : players[socketId].tasks
+      })
+    })
+
+    //Ici on met le sleep, 3 minutes par exemple
+    await sleep(1000 * 60 * 3)
+
+    //Orga de la nuit
+    //On dit à tlm que c'est la nuit
+    //On demande à tlm de voter
+    //On passe au jour, on peut mettre les checks de ressources etc ici aussi !
+    io.emit('game',{
+      type: 'set_time',
+      cur_night : nb_jours,
+      time : 'night'
+    })
+    //On met chez players que personne n'a voté, pour vérif dans websocket ensuite
+    Object.keys(players).forEach(socketId => {
+      players[socketId].hasVoted = false;
+    })
+
+    //On met le sleep pour laisser les gens voter
+    //await sleep(1000*60*0.5) //30s par ex
+
+    //Là on récup les votes mais jsp comment ils sont stockés encore
+  }
+
+}
+
+//Pas de lobby on met tout sur une partie
+//On va dire que quelqu'un qui se connecte veut qu'on lance la partie, va falloir que je réécrive tout quand y'aura les lobbys pg
 
 io.on('connection', (socket) => {
     console.log(`Joueur connecté : ${socket.id}`);
-
     players[socket.id] = {
         x: Math.floor(Math.random() * 800),
         y: Math.floor(Math.random() * 600),
-        direction: 'down'
+        direction: 'down',
     };
 
+    if(!connected_players[socket.id]) connected_players[socket.id] = {}
+    connected_players[socket.id].socket = socket;
+
     socket.emit('positions', players);
+    
+    //Ici on va mettre la logique de début de partie
+    console.log("Un joueur a rejoint : 1")
+    let nb_players = Object.keys(players).length
+    console.log("Un joueur a rejoint : " + nb_players)
+    //On va dire qu'on doit être 4 ?
+    if(nb_players == 2){
+      g_broadcast("4/4 joueurs, la partie va commencer")
+      launch_game().then(r => console.log("partie finie gg"))
+    }
+    else if (nb_players < 2) {
+      g_broadcast(nb_players + "/4 joueurs, la partie va commencer")
+    }
+
 
     socket.on('mouvement', (data) => {
       
@@ -271,17 +475,26 @@ io.on('connection', (socket) => {
         player = players[socket.id]
         d_parcourue = distance(player.x,player.y, data.x,data.y)
         if(c_time - player.time_last_mvt < 10) return;
-        console.log(c_time - player.time_last_mvt)
+        //console.log(c_time - player.time_last_mvt)
         if(d_parcourue/(c_time - player.time_last_mvt)*1000 > 1000){
           console.log(socket.id + " violation vitesse de déplacement " + d_parcourue/(c_time - player.time_last_mvt) + "px/s")
           return;
         }
       }
-        players[socket.id] = { ...data, time_last_mvt : Date.now()};
-        console.log(data);
+        players[socket.id].time_last_mvt = Date.now()
+        players[socket.id].x = data.x
+        players[socket.id].y = data.y
+        players[socket.id].direction = data.direction
+        //console.log(data);
         io.emit('positions', players);
     });
-
+    socket.on('open_chest', (data) => {
+      if(!map[data.item_id]) return;
+      //On peut mettre un check en disant qu'il peut être ouvert qu'une fois
+      //En fait on doit le faire, mais j'ai trop la flemme
+      if(!players[data.player].inventory) players[data.player].inventory = []
+      players[data.player].inventory.push(data.item_type)
+    })
     socket.on('action', (data) => {
         /*
         Format de data : un dico avec quelques clés dont 1 systématique "type"
@@ -292,8 +505,36 @@ io.on('connection', (socket) => {
          (- delete : un booléen pour savoir si le bush doit être suppr ?)
         */
         if(!data.type) return;
+        if(data.type == "dropItem"){
+          if(!players[data.player].inventory) return;
+          
+          let item_id = -1;
+          Object.keys(players[data.player].inventory).forEach(i => {
+            if(players[data.player].inventory[i] == data.item_type) {
+              //On peut jeter
+              item_id = i;
+            }
+          })
+          if(item_id == -1) return;
+          //On regarde si on complète une task avec
+          Object.values(players[data.player].tasks).forEach(val => {
+            if(val.name == T_THROW_RES && !val.completed){
+              val.qte--;
+              if(val.qte == 0){ 
+                val.completed = true
+                socket.emit('game',{
+                  type : 'completed_task',
+                  name : val.name
+                })
+              }
+            }
+          })
+          //Et ciaooo
+          players[data.player].inventory.splice(item_id, 1);
+
+        }
         if(data.type == "pickUp") {
-          console.log(data.item_id,map)
+          console.log(data.item_type, data.item_id, map[data.item_id])
           if (!map[data.item_id]) return;
           if (!map[data.item_id].capacity) return;
           if (map[data.item_id].capacity == 0) return;
@@ -303,8 +544,26 @@ io.on('connection', (socket) => {
           let py = players[data.player].y
           let ix, iy = get_pos(map[data.item_id]) 
           if (distance(px,py,ix,iy) > 100) return; //il est trop loin pour le faire
+          //console.log("ahouuuu")
+          //On regarde si le joueur a une tâche à faire en rapport avec l'objet récup
+          Object.values(players[data.player].tasks).forEach(val => {
+            if(val.item_type == data.item_type && !val.completed){
+              val.qte--;
+              if(val.qte == 0){
+                //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
+                socket.emit('game',{
+                  type : "completed_task",
+                  name : val.name
+                })
+                val.completed = true;
+              }
+            }
+          })
 
-
+          //On l'ajoute à l'inventaire
+          if(!players[data.player].inventory) players[data.player].inventory = []
+          players[data.player].inventory.push(data.item_type)
+          
           map[data.item_id].capacity--;
           io.emit('action', data)
           if(map[data.item_id].capacity == 0){
@@ -318,7 +577,8 @@ io.on('connection', (socket) => {
     // Gérer la déconnexion
     socket.on('disconnect', () => {
         console.log(`Joueur déconnecté : ${socket.id}`);
-        delete players[socket.id]; // Retirer le joueur de la liste
+        delete players[socket.id];
+        delete connected_players[socket.id];
         io.emit('positions', players); // Mettre à jour la liste pour tous
     });
 });
