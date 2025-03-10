@@ -1,5 +1,6 @@
 import { BerryBush } from "./sprites/berry_bush.js"
 import { OakPlanks } from "./sprites/oak_planks.js"
+import { Chest } from "./sprites/chest.js"
 import { Player } from './sprites/player.js'
 
 var config = {
@@ -33,6 +34,7 @@ var game = new Phaser.Game(config)
   function preload() {
     // Charger les sprites correctement
     this.load.image('pickUpIcon', '/static/sprite_sheets/PickUp.png');
+    this.load.image('openChestIcon', '/static/sprite_sheets/OpenChest.png');
     this.load.image('tiles', 'static/tilemaps/TileSet_V2.png');
     this.load.image('vegetation', 'static/tilemaps/vegetation.png');
     //this.load.image('Water', 'static/tilemaps/water_animation_spritesheet.png');
@@ -46,46 +48,53 @@ var game = new Phaser.Game(config)
   function create () {
 
     // On init le joueur avant tout
-    this.player = new Player(this, 500,500, true)
+    this.player = new Player(this, 500,500, true, "impostor")
     player = this.player;
 
     
     this.map = this.add.tilemap('map')
     const map = this.map
     console.log(map);
+    /////////TILESET/////////
     //on créé le jeu de tuile avec son nom et l'image dont on a besoin
     const tileset1 = map.addTilesetImage('TileSet_V2', 'tiles');
     const tileset2 = map.addTilesetImage('vegetation', 'vegetation');
+    /////////LAYER/////////
     //const tileset2 = map.addTilesetImage('water_animation_spritesheet', 'Water');
-    this.layerEau = map.createLayer('island', [tileset1]); 
+    this.layerIle = map.createLayer('island', [tileset1]); 
+    this.layerEau = map.createLayer('sea', [tileset1]); 
     this.sacs_couchages = map.createLayer('sacs_couchages', [tileset1]);
     this.campfire = map.createLayer('campfire', [tileset1]);  
     this.palmier = map.createLayer('palmier', [tileset1]); 
+    this.bamboo = map.createLayer('bamboo', [tileset1]); 
     this.mapElements = map.createLayer('elements', [tileset2]); 
     let layerEau = this.layerEau
+    
     getAnimatedTiles(this);
     this.physics.world.setBounds(0, 0, 800 * 8, 600 * 8);
 
     let berryBushes = this.mapElements.filterTiles(tile => {
       return tile.properties && tile.properties.name == "berryBush";
     });
-
     let woodPiles = this.mapElements.filterTiles(tile => {
       return tile.properties && tile.properties.name == "woodPile";
     });
+    let chests = this.mapElements.filterTiles(tile => {
+      return tile.properties && tile.properties.name == "chest";
+    });
+    let topLeftChests = chests.filter(tile => {
+      return tile.properties.numero == 1;
+    });
 
 ////////////OBJETS COLLISIONS////////////
-    console.log(berryBushes)
     this.elements = [] //Ici tous les éléments avec lesquels on peut intéragir
     for(let berryBush_i in berryBushes) {
       let berryBush = new BerryBush(this, berryBushes[berryBush_i].pixelX + 16, berryBushes[berryBush_i].pixelY + 16, berryBushes[berryBush_i].y + "/" + berryBushes[berryBush_i].x, berryBushes[berryBush_i])
-      console.log(berryBushes[berryBush_i])
       this.elements.push(berryBush)
         
       this.physics.add.collider(this.player, berryBush, function() {
         console.log('Collision avec berry bush !');
       });
-
       this.add.existing(berryBush)
     }
 
@@ -96,33 +105,32 @@ var game = new Phaser.Game(config)
       this.physics.add.collider(this.player, woodPile, function() {
         console.log('Collision avec woodPile !');
       });
-
       this.add.existing(woodPile)
     }
 
-    //this.berryBush = new BerryBush(this, 200, 200)
-    //this.oakPlank = new OakPlanks(this, 250, 200)
-    /*this.elements = [
-      this.berryBush,
-      this.oakPlank
-    ]*/
-    console.log(this.elements)
+    for(let chest_i in topLeftChests) {
+      let chest = new Chest(this, chests[chest_i].pixelX + 32, chests[chest_i].pixelY + 32 , chests[chest_i].y + "/" + chests[chest_i].x, chests[chest_i])
+      this.elements.push(chest)
+        
+      this.physics.add.collider(this.player, chest, function() {
+        console.log('Collision avec chest !');
+      });
+      this.add.existing(chest)
+    }
+
 
     this.cameras.main.startFollow(this.player, true);
-    /*this.physics.add.collider(
-      this.player,
-      this.layerEau,
-      null,
-      null,
-      this
-    // );*/
+
     if (this.player.role == "impostor") {
       this.physics.add.collider(this.player, this.layerEau, this.player.onWaterCollision, null, this.player);
+      this.physics.add.collider(this.player, this.campfire, this.player.fireCollision, null, this.player);
     } else {
       this.physics.add.collider(this.player, this.layerEau, null, null, this);
+      this.physics.add.collider(this.player, this.campfire, null, null, this);
     }
-    layerEau.setCollisionBetween(54,104)
-    console.log(layerEau.body)
+    this.layerEau.setCollisionBetween(196,196)
+    this.campfire.setCollisionBetween(225,247)
+    console.log(this.layerEau.body)
     //layerEau.setTint(0x3d3d29)
     // #999966 pluie ?
     // #3d3d29 nuit ?
@@ -195,7 +203,7 @@ var game = new Phaser.Game(config)
     
     this.player.onAction('dropItem', () => {
       socket.emit('action', {
-        type : 'berryBushDrop',
+        type : 'dropItem', //drop n'importe quel item
         item_type : "berryBush",
         item_id : "1", //id de n'importe quel objet
         player : socket.id
@@ -203,21 +211,32 @@ var game = new Phaser.Game(config)
       console.log("onAction : dropItem");
     })
 
+    this.player.onAction('openChest', (chest_id) => {
+      const items = [
+        { type: 'sceau', id: '1' },
+        { type: 'pistolet', id: '2' },
+        { type: 'hache', id: '3' }
+      ];
+      const randomIndex = Math.floor(Math.random() * items.length);
+      const item = items[randomIndex];
 
-    //this.add.existing(this.berryBush)
-    //this.add.existing(this.oakPlank)
+      socket.emit('open_chest', { 
+        type : 'openChest',
+        item_type : items.type,
+        item_id : chest_id,
+        player: socket.id 
+      });
+      console.log("onAction : openChest");
+      console.log(`Le joueur a trouvé ${item.type}`);
+    })
+
+
     this.add.existing(this.player)
     this.player.initIndicator()
     this.player.square = this.add.graphics();
     this.player.square.fillStyle(0xff0000, 1);
     const squareSize = 10;
     this.player.square.fillRect(-squareSize/2, -squareSize/2, squareSize, squareSize);
-    //this.physics.add.collider(this.player, this.berryBush, function() {
-    //  console.log('Collision avec berry bush !');
-    //});
-    //this.physics.add.collider(this.player, this.oakPlank, function() {
-    //  console.log('Collision avec oak plank !');
-    //});
 
     this.events.on('update', () => {
       this.player.canInteract = null;
@@ -232,7 +251,7 @@ var game = new Phaser.Game(config)
         //console.log(distance,cur,this.player)
 
         if(distance < 50) 
-          this.player.canInteract = cur;
+          this.player.canInteract = cur; //cur a des objets de la liste elements
       }}); 
     this.sendPlayerPosition = (x,y) => {
         socket.emit('mouvement', {
@@ -244,7 +263,7 @@ var game = new Phaser.Game(config)
     this.sendPlayerPosition(300,300)
 
 
-    //Def animations
+/////////////////ANIMATIONS/////////////////
     this.anims.create({
       key: 'left',
       frames: this.anims.generateFrameNumbers('player', { start: 117, end: 125 }),
@@ -271,6 +290,7 @@ var game = new Phaser.Game(config)
     });
 
   }
+
   function update(time, delta) {
     this.physics.collide(this.player, this.layerEau);
     for(let cur_player in otherPlayers) {
