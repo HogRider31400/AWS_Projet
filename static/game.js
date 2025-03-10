@@ -27,6 +27,9 @@ let otherPlayers = {};
 let playersGroup;
 let player;
 let cursors;
+const playerName = sessionStorage.getItem('playerName') || 'Joueur';
+        
+        
 
 var game = new Phaser.Game(config)
 
@@ -49,7 +52,8 @@ var game = new Phaser.Game(config)
     this.player = new Player(this, 500,500, true)
     player = this.player;
 
-    
+    player.inventory = []; // Initialise un inventaire vide
+
     this.map = this.add.tilemap('map')
     const map = this.map
     console.log(map);
@@ -173,36 +177,157 @@ var game = new Phaser.Game(config)
 
 
     ////ACTIONS DU JOUEUR ENREGISTREES DANS ONACTION////
-    this.player.onAction('pickUpBerry', (berry_id) => {
-      socket.emit('action', {
-        type : 'pickUp',
-        item_type : "berryBush",
-        item_id : berry_id,
-        player : socket.id
-      })
-      console.log("onAction : pickUpBerry")
-    })
+    // this.player.onAction('pickUpBerry', (berry_id) => {
+    //   socket.emit('action', {
+    //     type : 'pickUp',
+    //     item_type : "berryBush",
+    //     item_id : berry_id,
+    //     player : socket.id
+    //   })
+    //   console.log("onAction : pickUpBerry")
+    // })
 
-    this.player.onAction('pickUpWood', (wood_id) => {
-      socket.emit('action', {
-        type : 'pickUp',
-        item_type : "woodPlank",
-        item_id : wood_id,
-        player : socket.id
-      })
-      console.log("onAction : pickUpWood")
-    })
+    // this.player.onAction('pickUpWood', (wood_id) => {
+    //   socket.emit('action', {
+    //     type : 'pickUp',
+    //     item_type : "woodPlank",
+    //     item_id : wood_id,
+    //     player : socket.id
+    //   })
+    //   console.log("onAction : pickUpWood")
+    // })
+
     
-    this.player.onAction('dropItem', () => {
-      socket.emit('action', {
-        type : 'berryBushDrop',
-        item_type : "berryBush",
-        item_id : "1", //id de n'importe quel objet
-        player : socket.id
-      })
-      console.log("onAction : dropItem");
-    })
+    // this.player.onAction('dropItem', () => {
+    //   socket.emit('action', {
+    //     type : 'berryBushDrop',
+    //     item_type : "berryBush",
+    //     item_id : "1", //id de n'importe quel objet
+    //     player : socket.id
+    //   })
+    //   console.log("onAction : dropItem");
+    // })
 
+    ////ACTIONS DU JOUEUR ENREGISTREES DANS ONACTION////
+this.player.onAction('pickUpBerry', (berry_id) => {
+  socket.emit('action', {
+      type : 'pickUp',
+      item_type : "berryBush",
+      item_id : berry_id,
+      player : socket.id
+  });
+  console.log("onAction : pickUpBerry");
+});
+
+this.player.onAction('pickUpWood', (wood_id) => {
+  socket.emit('action', {
+      type : 'pickUp',
+      item_type : "woodPlank",
+      item_id : wood_id,
+      player : socket.id
+  });
+  console.log("onAction : pickUpWood");
+});
+
+// Ajout du pistolet dans les sockets
+this.player.onAction('pickUpGun', (gun_id) => {
+  socket.emit('action', {
+      type : 'pickUp',
+      item_type : "gun",
+      item_id : gun_id,
+      player : socket.id
+  });
+  console.log("onAction : pickUpGun");
+});
+
+// Ajout du seau dans les sockets
+this.player.onAction('pickUpBucket', (bucket_id) => {
+  socket.emit('action', {
+      type : 'pickUp',
+      item_type : "bucket",
+      item_id : bucket_id,
+      player : socket.id
+  });
+  console.log("onAction : pickUpBucket");
+});
+
+/*this.player.onAction('dropItem', () => {
+  if (player.inventory.length > 0) {
+      let removedItem = player.inventory.pop();  // Retire le dernier objet ajouté
+      socket.emit('action', {
+          type : 'dropItem',
+          item_type : removedItem,
+          player : socket.id
+      });
+      console.log(`${removedItem} retiré de l'inventaire et envoyé au serveur.`);
+  } else {
+      console.log("L'inventaire est vide, impossible de déposer un objet.");
+  }
+});
+const playerName = sessionStorage.getItem('playerName') || 'Joueur' + Math.floor(Math.random() * 1000);
+const socket = io();*/
+
+// ✅ Vue.js pour gérer la chatbox
+const app = Vue.createApp({
+  data() {
+      return {
+          messages: [], 
+          newMessage: ""
+      };
+  },
+  methods: {
+      sendMessage() {
+          if (this.newMessage.trim() !== "") {
+              socket.emit("chat-message", { player: playerName, message: this.newMessage });
+              this.newMessage = "";
+          }
+      }
+  },
+  mounted() {
+      socket.on("chat-message", (data) => {
+          this.messages.push(data);
+          this.$nextTick(() => {
+              const messagesContainer = document.getElementById("messages");
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          });
+      });
+  }
+});
+app.mount("#app");
+
+/*function updateInventoryUI() {
+  const inventoryContainer = document.getElementById("inventory");
+  if (!inventoryContainer) return; // Vérifie si l'élément existe
+
+  inventoryContainer.innerHTML = ""; // Efface l'affichage précédent
+
+  player.inventory.forEach(item => {
+      let itemDiv = document.createElement("div");
+      itemDiv.classList.add("inventory-item");
+
+      // Associer chaque objet avec son image
+      switch (item) {
+          case "berryBush":
+              itemDiv.style.backgroundImage = "url('/static/sprite_sheets/berry.png')";
+              break;
+          case "woodPile":
+              itemDiv.style.backgroundImage = "url('/static/sprite_sheets/wood.png')";
+              break;
+          case "gun":
+              itemDiv.style.backgroundImage = "url('/static/sprite_sheets/gun.png')";
+              break;
+          case "bucket":
+              itemDiv.style.backgroundImage = "url('/static/sprite_sheets/bucket.png')";
+              break;
+          default:
+              itemDiv.style.backgroundImage = "url('/static/sprite_sheets/default.png')";
+              break;
+      }
+
+      inventoryContainer.appendChild(itemDiv);
+  });
+}
+*/
 
     //this.add.existing(this.berryBush)
     //this.add.existing(this.oakPlank)
@@ -242,7 +367,15 @@ var game = new Phaser.Game(config)
         });
     }
     this.sendPlayerPosition(300,300)
-
+// Gestion de l'affichage de l'inventaire avec la touche "I"
+/*this.input.keyboard.on('keydown-I', () => {
+  const inventoryContainer = document.getElementById("inventory");
+  if (inventoryContainer.style.display === "none") {
+      inventoryContainer.style.display = "flex"; // Afficher
+  } else {
+      inventoryContainer.style.display = "none"; // Cacher
+  }
+});*/
 
     //Def animations
     this.anims.create({
