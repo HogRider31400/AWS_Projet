@@ -130,7 +130,7 @@ var game = new Phaser.Game(config)
     }
     this.layerEau.setCollisionBetween(196,196)
     this.campfire.setCollisionBetween(225,247)
-    console.log(layerEau.body)
+    console.log(this.layerEau.body)
     //layerEau.setTint(0x3d3d29)
     // #999966 pluie ?
     // #3d3d29 nuit ?
@@ -251,7 +251,7 @@ var game = new Phaser.Game(config)
         //console.log(distance,cur,this.player)
 
         if(distance < 50) 
-          this.player.canInteract = cur;
+          this.player.canInteract = cur; //cur a des objets de la liste elements
       }}); 
     this.sendPlayerPosition = (x,y) => {
         socket.emit('mouvement', {
