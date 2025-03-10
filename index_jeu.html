@@ -15,5 +15,70 @@
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
+  <div id="app">!
+    <div id="chat">
+        <div id="messages">
+            <div v-for="(msg, index) in messages" :key="index" class="message">
+                <span>{{ msg.player }}</span>: {{ msg.message }}
+            </div>
+        </div>
+        <input type="text" v-model="newMessage" @keydown.enter="sendMessage" placeholder="Tapez votre message...">
+    </div>
+</div>
+
+    <style>
+     
+      canvas {
+        border: 2px solid gray;
+      }
+  
+      body {
+          margin: 0;
+          overflow: hidden;
+          background-color: #87CEEB;
+      }
+      #chat {
+          position: absolute;
+          bottom: 0;
+          left: 20px;
+          width: 350px;
+          height: 250px;
+          background: linear-gradient(145deg, #ffffff, #e6e6e6);
+          border: 2px solid #cccccc;
+          border-radius: 10px;
+          overflow: hidden;
+          box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.2);
+          font-family: Arial, sans-serif;
+      }
+      #messages {
+          padding: 10px;
+          height: 200px;
+          overflow-y: auto;
+          background-color: #f5f5f5;
+          border-bottom: 2px solid #cccccc;
+      }
+      .message {
+          padding: 5px 10px;
+          margin-bottom: 8px;
+          background-color: #d9fdd3;
+          border-radius: 8px;
+          box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
+          white-space: pre-wrap;
+      }
+      .message span {
+          font-weight: bold;
+          color: #31708f;
+      }
+      input {
+          width: calc(100% - 20px);
+          padding: 10px;
+          margin: 0;
+          border: none;
+          outline: none;
+          border-radius: 0 0 8px 8px;
+          font-size: 16px;
+          box-shadow: inset 1px 1px 4px rgba(0, 0, 0, 0.1);
+      }
+  </style>
 
 </html>
