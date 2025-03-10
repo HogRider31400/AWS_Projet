@@ -367,6 +367,34 @@ var game = new Phaser.Game(config)
     });
   }
 
+//Vue.js pour gérer la chatbox
+const app = Vue.createApp({
+  data() {
+      return {
+          messages: [], 
+          newMessage: ""
+      };
+  },
+  methods: {
+      sendMessage() {
+          if (this.newMessage.trim() !== "") {
+              socket.emit("chat-message", { player: playerName, message: this.newMessage });
+              this.newMessage = "";
+          }
+      }
+  },
+  mounted() {
+      socket.on("chat-message", (data) => {
+          this.messages.push(data);
+          this.$nextTick(() => {
+              const messagesContainer = document.getElementById("messages");
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          });
+      });
+  }
+});
+app.mount("#app");
+
   function updateOtherPlayers(scene) {
     for (let id in playersData) {
       if (id !== socket.id) {
