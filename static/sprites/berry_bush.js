@@ -3,7 +3,7 @@ export class BerryBush extends Phaser.GameObjects.Sprite {
     {
         super(scene, x, y);
         this.id = id;
-        this.type = "berry"
+        this.type = "berry";
         this.tile = tile;
 
         if (!scene.textures.exists('redSquare')) {

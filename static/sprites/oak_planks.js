@@ -3,7 +3,7 @@ export class OakPlanks extends Phaser.GameObjects.Sprite {
     {
         super(scene, x, y);
         this.id = id;
-        this.type = "wood"
+        this.type = "wood";
         this.tile = tile;
         if (!scene.textures.exists('woodSquare')) {
             let graphics = scene.add.graphics();

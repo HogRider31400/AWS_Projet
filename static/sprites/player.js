@@ -1,5 +1,5 @@
-import { BerryBush } from "./berry_bush.js";
-import { getImpostorTasks, getPlayerTasks, getTasks } from "../tasks.js";
+import { getImpostorTasks, getPlayerTasks } from "../tasks.js";
+import { Chest } from "./chest.js"
 
 export class Player extends Phaser.GameObjects.Sprite {
     constructor (scene, x, y, active, role = "player")
@@ -9,16 +9,13 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.isActive = active;
         this.role = role;
         this.inventory = [];
-        this.tasks = getTasks();
-        scene.physics.add.existing(this);
-        //this.tint = 0x3d3d29
-
         if (role == "player") {
             this.tasks = getPlayerTasks();
         } else if (role == "impostor") {
             this.tasks = getImpostorTasks();
             this.tint = 0xFF0000; // Rouge pour différencier l'imposteur
         }
+        scene.physics.add.existing(this);
         
         this.body.setCollideWorldBounds(true)
 
@@ -52,6 +49,8 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.cursors = scene.input.keyboard.createCursorKeys();
         this.keyA = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         this.keyD = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
+        this.keyT = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+
         this.moveSpeed = 200;
         this.last_sent = 10000;
         this.last_pos = {
@@ -122,6 +121,8 @@ export class Player extends Phaser.GameObjects.Sprite {
     initIndicator() {
         this.interactionIndicator = this.scene.add.sprite(0, 0, 'pickUpIcon');
         this.interactionIndicator.visible = false;
+        this.interactionIndicator2 = this.scene.add.sprite(0, 0, 'openChestIcon');
+        this.interactionIndicator2.visible = false;
     }
 
     preUpdate (time, delta)
@@ -179,9 +180,9 @@ export class Player extends Phaser.GameObjects.Sprite {
         if(moving && this.scene.layerEau.layer.data[tileX])
             if(this.scene.layerEau.layer.data[tileX][tileY]) {
                 let cur = this.scene.layerEau.layer.data[tileX][tileY]
-                console.log(cur)
+                //console.log(cur)
                 if(cur.properties.to_play) {
-                    console.log("On devrait jouer", cur.properties.to_play)
+                    //console.log("On devrait jouer", cur.properties.to_play)
                     if(this.curPlaying != cur.properties.to_play){
                         if(this.curPlaying){
                             this.sounds[this.curPlaying].stop();
@@ -211,7 +212,7 @@ export class Player extends Phaser.GameObjects.Sprite {
         }
         this.last_dir = this.direction
 
-        if (this.canInteract) {
+        if (this.canInteract && this.canInteract.type != "chest" && this.canInteract.type != "chestOpened") {
             const cur = this.canInteract
             const midX = cur.x //+ 50 //(this.x + berryBush.x) / 3;
             const midY = cur.y + 50 * (this.y+10 > cur.y ? -1 : 1) //this.y //this.y + (this.y + berryBush.y) / 2;
@@ -219,8 +220,17 @@ export class Player extends Phaser.GameObjects.Sprite {
             this.interactionIndicator.z = 1;
             this.interactionIndicator.visible = true;
             //console.log(this.interactionIndicator)
+        } else if (this.canInteract && this.canInteract.type == "chest") {
+            console.log("interaction avec chest")
+            const cur = this.canInteract
+            const midX = cur.x //+ 50 //(this.x + berryBush.x) / 3;
+            const midY = cur.y + 50 * (this.y+10 > cur.y ? -1 : 1) //this.y //this.y + (this.y + berryBush.y) / 2;
+            this.interactionIndicator2.setPosition(midX, midY);
+            this.interactionIndicator2.z = 1;
+            this.interactionIndicator2.visible = true;
         } else {
             this.interactionIndicator.visible = false;
+            this.interactionIndicator2.visible = false;
         }
 
 
@@ -238,15 +248,25 @@ export class Player extends Phaser.GameObjects.Sprite {
                     this.tasks.pickUpWood(this, this.canInteract)
                 }
             }
-
-            if (Phaser.Input.Keyboard.JustDown(this.keyD)) {
-                console.log('Action avec D réalisée !', this.inventory);
-                //this.actions.dropItem(this.canInteract.id);
-                this.tasks.dropItem(this); // Appeler la méthode dropItem() pour déposer un objet
+            if (this.canInteract.type == "chest"){
+                if (this.actions.openChest) {
+                    this.actions.openChest(this.canInteract.id);
+                    this.tasks.openChest(this, this.canInteract);
+                    this.canInteract.chestTypeOpened();
+                    //créer une fonction dans task pour mettre visuellement l'objet ?
+                }
             }
-            
-            //Je sais pas quoi faire ici, mais par exemple on pourrait utiliser la valeur de canInteract pour savoir quoi faire
+            if (this.canInteract.type == "chestOpened") {
+                console.log("Le coffre a déjà été ouvert !")
+            }
         }
+
+        if (Phaser.Input.Keyboard.JustDown(this.keyD)) {
+            console.log('Action avec D réalisée !');
+            this.actions.dropItem(this.canInteract.id);
+            this.tasks.dropItem(this); // Appeler la méthode dropItem() pour déposer un objet
+        }
+
     }
 
     onWaterCollision() {
@@ -255,4 +275,11 @@ export class Player extends Phaser.GameObjects.Sprite {
             getImpostorTasks().throwItem(this);
         }
     }
+    fireCollision() {
+        console.log("L'imposteur essaie de jeter un objet dans le feu !", this.inventory);
+        if (Phaser.Input.Keyboard.JustDown(this.keyT)) {
+            getImpostorTasks().throwItem(this);
+        }
+    }
+
 }
