@@ -236,7 +236,7 @@ app.post("/login", async (req, res) => {
     }
 
     const token = await bcrypt.hash(randomUUID(), 2);
-    res.cookie('token',token , { maxAge: 900000, httpOnly: true });
+    res.cookie('token',token , { maxAge: 900000, httpOnly: true, sameSite:"strict"});
     await prisma.token.create({
       data: {
           token,
