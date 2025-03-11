@@ -231,11 +231,12 @@ var game = new Phaser.Game(config)
       console.log("onAction : pickUpWood")
     })
     
-    this.player.onAction('dropItem', () => {
+    this.player.onAction('dropItem', (item) => {
+      //console.log("Item.type : ", item.type, " Item.id : ", item.id)
       socket.emit('action', {
         type : 'dropItem', //drop n'importe quel item
-        item_type : "berryBush",
-        item_id : "1", //id de n'importe quel objet
+        item_type : item.type,
+        item_id : item.id, //id de n'importe quel objet
         player : socket.id
       })
       console.log("onAction : dropItem");
