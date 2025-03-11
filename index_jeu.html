@@ -3,19 +3,16 @@
 <head>
   <title>Lost Island</title>
   <link rel="stylesheet" href="/chat.css">
-  <style>
-    body {
-      margin: 0
-    }
-    canvas {
-      border: 2px solid gray;;
-    }
-  </style>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/inventory.css">
+  <link rel="stylesheet" href="/tasks.css">
   <script src="//cdn.jsdelivr.net/npm/phaser@3.87.0/dist/phaser.min.js"></script>
   <script type="module" src="/static/game.js"></script>
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  
 </head>
+<body>
   <div id="app">!
     <div id="chat">
         <div id="messages">
@@ -26,5 +23,23 @@
         <input type="text" v-model="newMessage" @keydown.enter="sendMessage" placeholder="Tapez votre message...">
     </div>
   </div>
-</head>
+  <div class="inventory">
+    <div class="inventory-slots">
+      <div class="inventory-slot">Item 1</div>
+      <div class="inventory-slot">Item 2</div>
+      <div class="inventory-slot">Item 3</div>
+      <div class="inventory-slot">Item 4</div>
+      <div class="inventory-slot">Item 5</div>
+      <div class="inventory-slot">Item 6</div>
+      <div class="inventory-slot">Item 7</div>
+      <div class="inventory-slot">Item 8</div>
+    </div>
+  </div>
+  <div id="tasks" class="task-menu">
+    <button id="toggle-button" class="toggle-button">Ouvrir les tâches</button>
+    <div id="task-list" class="task-list" style="display: none;">
+    </div>
+  </div>
+  <script src="tasks.js"></script>
+</body>
 </html>
