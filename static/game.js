@@ -164,6 +164,9 @@ var game = new Phaser.Game(config)
           //Ici on doit s'occuper de faire en sorte que les gens votent
         }
       }
+      if(data.type == "elimination"){
+        console.log("Le joueur " + data.player_id + " a été eliminé")
+      }
     })
 
 

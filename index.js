@@ -340,6 +340,8 @@ function shuffle(array) {
 }
 
 
+let votes = {}
+
 const g_broadcast = msg => 
   io.emit('game', {
     type : "broadcast",
@@ -424,6 +426,8 @@ async function launch_game(){
       cur_night : nb_jours,
       time : 'night'
     })
+    //On reset les votes
+    votes = {}
     //On met chez players que personne n'a voté, pour vérif dans websocket ensuite
     Object.keys(players).forEach(socketId => {
       players[socketId].hasVoted = false;
@@ -432,7 +436,35 @@ async function launch_game(){
     //On met le sleep pour laisser les gens voter
     //await sleep(1000*60*0.5) //30s par ex
 
-    //Là on récup les votes mais jsp comment ils sont stockés encore
+    //On récup le max dans votes
+    let player_id = -1;
+    let max_votes = -1;
+
+    Object.keys(votes).forEach(socketId => {
+      if(max_votes < votes[socketId]){
+        player_id = socketId;
+        max_votes = votes[socketId]
+      }
+    })
+
+    //On fait un deuxième check pour savoir si il y a égalité
+    let found_eq = false;
+    Object.keys(votes).forEach(socketId => {
+      if(max_votes == votes[socketId] && player_id != socketId) found_eq = true;
+    })
+
+    if(found_eq){
+      g_broadcast("Il y a eu égalité, personne n'a été éliminé")
+    }
+    else {
+      //On reveal son rôle ou pas ?
+      io.emit('game', {
+        type : "elimination",
+        player_id : player_id
+      })
+    }
+
+
   }
 
 }
@@ -505,6 +537,16 @@ io.on('connection', (socket) => {
          (- delete : un booléen pour savoir si le bush doit être suppr ?)
         */
         if(!data.type) return;
+        if(data.type == "vote") {
+          if(!players[data.player]) return;
+          if(players[data.player].hasVoted) return;
+          if(!data.vote) return;
+          if(!votes[data.vote]) 
+            votes[data.vote] = 1;
+          else
+            votes[data.vote] += 1;
+          players[data.player].hasVoted = true;
+        }
         if(data.type == "dropItem"){
           if(!players[data.player].inventory) return;
           
