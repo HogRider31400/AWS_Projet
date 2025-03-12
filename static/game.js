@@ -184,11 +184,7 @@ var game = new Phaser.Game(config)
        (- delete : un booléen pour savoir si le bush doit être suppr ?)
       */
       if(!data.type) return;
-      if(data.type == "berryBushPickUp") {
-        //On fait l'action ici
-        //Pour l'instant : rien
-        console.log(data.player + " a recup une baie rouge")
-      }
+      
     })
 
     socket.on('remove', (data) => {

@@ -218,7 +218,7 @@ app.post("/register", async (req, res) => {
                 password: hashedPassword,
             },
         });
-        const token = createHash('sha256').update(randomUUID() + randomBytes(256)).digest('hex');
+        const token = createHash('sha256').update(randomUUID() + randomBytes(117)).digest('hex');
         res.cookie('token',token , { maxAge: 3600000, httpOnly: true, sameSite:"strict"});
         res.status(201).json({ message: "Inscription réussie !" });
     } catch (error) {
