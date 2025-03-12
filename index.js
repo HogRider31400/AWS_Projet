@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-const { randomUUID } = require('crypto');
+const { randomUUID, createHash, randomBytes } = require('crypto');
 const cookieParser = require('cookie-parser');
 process.env['DATABASE_URL'] = 'file:./prisma/dev.db';
 
@@ -129,7 +129,7 @@ async function isConnected(req){
     console.log((new Date() / 1000) - (new Date(token.createdAt) / 1000))
     if (token){
       const diff = (new Date() / 1000) - (new Date(token.createdAt) / 1000);
-      if (diff <= (2 * 3600)) return true;
+      if (diff <= 3600) return true;
     }
   } 
   return false;
@@ -179,7 +179,7 @@ app.get('/lobby', async function (req, res) {
 
 app.get('/disconnect', async function (req, res) {
   if(await isConnected(req)) 
-    res.cookie('token', '' , { maxAge: 900000, httpOnly: true });
+    res.cookie('token', '' , { maxAge: 3600000, httpOnly: true });
   res.redirect('/');
 
 });
@@ -235,8 +235,9 @@ app.post("/login", async (req, res) => {
         return res.status(400).json({ error: "Utilisateur non trouvé" });
     }
 
-    const token = await bcrypt.hash(randomUUID(), 2);
-    res.cookie('token',token , { maxAge: 900000, httpOnly: true, sameSite:"strict"});
+    const token = createHash('sha256').update(randomUUID() + randomBytes(256)).digest('hex');
+    res.cookie('token',token , { maxAge: 3600000, httpOnly: true, sameSite:"strict"});
+    
     await prisma.token.create({
       data: {
           token,
