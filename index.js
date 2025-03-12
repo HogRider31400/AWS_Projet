@@ -201,6 +201,7 @@ app.post("/connect_to_game", async (req,res) => {
   res.status(201).json({ message: "Connexion réussie" });
 })
 
+
 app.post("/register", async (req, res) => {
     const { email, password } = req.body;
 
@@ -217,6 +218,8 @@ app.post("/register", async (req, res) => {
                 password: hashedPassword,
             },
         });
+        const token = createHash('sha256').update(randomUUID() + randomBytes(256)).digest('hex');
+        res.cookie('token',token , { maxAge: 3600000, httpOnly: true, sameSite:"strict"});
         res.status(201).json({ message: "Inscription réussie !" });
     } catch (error) {
         res.status(400).json({ error: "Email déjà utilisé." });
@@ -237,7 +240,7 @@ app.post("/login", async (req, res) => {
 
     const token = createHash('sha256').update(randomUUID() + randomBytes(256)).digest('hex');
     res.cookie('token',token , { maxAge: 3600000, httpOnly: true, sameSite:"strict"});
-    
+
     await prisma.token.create({
       data: {
           token,

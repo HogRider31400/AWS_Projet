@@ -20,7 +20,7 @@ document.getElementById('registerForm').addEventListener('submit', async functio
             const result = await response.json();
 
             if (response.ok) {
-                alert(result.message);
+                //alert(result.message);
                 localStorage.setItem("isLoggedIn", "true"); 
                 window.location.href = "/"; 
             } else {
@@ -33,6 +33,6 @@ document.getElementById('registerForm').addEventListener('submit', async functio
 });
 document.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem("isLoggedIn") === "true") {
-        window.location.href = "index1.html";
+        window.location.href = "/";
     }
 });

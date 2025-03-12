@@ -79,7 +79,7 @@ nav {
 /* La partie centre de la page */
 .centre {
     min-height: 100vh;
-    background: url(../images/bg.jpg);
+    background: #1a1f2c;
     background-size: cover;
     background-position: center;
     position: relative;
