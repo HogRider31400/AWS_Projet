@@ -216,6 +216,14 @@ app.post("/connect_to_game", async (req,res) => {
       players[socketId].x = old_players[other_id].x
       players[socketId].y = old_players[other_id].y
       players[socketId].tasks = old_players[other_id].tasks
+      players[socketId].role = old_players[other_id].role
+    }
+    else if (players[other_id]) {
+      players[socketId].x = players[other_id].x
+      players[socketId].y = players[other_id].y
+      players[socketId].tasks = players[other_id].tasks
+      players[socketId].role = players[other_id].role
+      delete players[other_id] //A voir si ça supprime le ref vers tasks, j'espère pas
     }
     console.log(players[socketId])
     connected_players[socketId].socket.emit('game',{
@@ -224,7 +232,8 @@ app.post("/connect_to_game", async (req,res) => {
       map: map,
       started : game_started,
       tasks : players[socketId].tasks,
-      pos : { x : players[socketId].x, y : players[socketId].y}
+      pos : { x : players[socketId].x, y : players[socketId].y},
+      role : players[socketId].role
     })
     return;
   }
@@ -234,7 +243,8 @@ app.post("/connect_to_game", async (req,res) => {
     map: map,
     position : null,
     tasks : null,
-    pos : { x : players[socketId].x, y : players[socketId].y}
+    pos : { x : players[socketId].x, y : players[socketId].y},
+    role : players[socketId].role
   })
   connected_players[socketId].token = req.cookies.token;
 
