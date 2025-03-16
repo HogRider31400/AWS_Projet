@@ -7,7 +7,7 @@ const bcrypt = require('bcrypt');
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
-const { randomUUID } = require('crypto');
+const { randomUUID, createHash, randomBytes } = require('crypto');
 const cookieParser = require('cookie-parser');
 process.env['DATABASE_URL'] = 'file:./prisma/dev.db';
 
@@ -129,7 +129,7 @@ async function isConnected(req){
     console.log((new Date() / 1000) - (new Date(token.createdAt) / 1000))
     if (token){
       const diff = (new Date() / 1000) - (new Date(token.createdAt) / 1000);
-      if (diff <= (2 * 3600)) return true;
+      if (diff <= 3600) return true;
     }
   } 
   return false;
@@ -179,27 +179,91 @@ app.get('/lobby', async function (req, res) {
 
 app.get('/disconnect', async function (req, res) {
   if(await isConnected(req)) 
-    res.cookie('token', '' , { maxAge: 900000, httpOnly: true });
+    res.cookie('token', '' , { maxAge: 3600000, httpOnly: true });
   res.redirect('/');
 
 });
 
 //Ici on met socketId : token je pense (ou l'inverse en fonction des besoins)
 connected_players = {}
-
+old_players = {}
 app.post("/connect_to_game", async (req,res) => {
   if(!await isConnected(req)) {
     res.status(400).json({ error: "Token inconnu ou trop ancien." });
     return;
   }
   console.log(req.body)
-
   const {socketId} = req.body;
   if(!connected_players[socketId]) connected_players[socketId] = {}
+  //if(!connected_players[socketId]) connected_players[socketId] = {}
+  //On va chercher si un joueur a un token associé
+  let other_id = null;
+  Object.keys(connected_players).forEach(id => {
+    if(id == socketId) return;
+    if(connected_players[id].token == req.cookies.token){
+      other_id = id;
+      return;
+    }
+  })
+  if(other_id){
+    let o = connected_players[other_id];
+    connected_players[socketId].inventory = o.inventory
+    connected_players[socketId].token = o.token
+    delete connected_players[other_id];
+    let tasks = [];
+    if(old_players[other_id]) {
+      console.log("youhou")
+      players[socketId].x = old_players[other_id].x
+      players[socketId].y = old_players[other_id].y
+      players[socketId].tasks = old_players[other_id].tasks
+      players[socketId].role = old_players[other_id].role
+    }
+    else if (players[other_id]) {
+      players[socketId].x = players[other_id].x
+      players[socketId].y = players[other_id].y
+      players[socketId].tasks = players[other_id].tasks
+      players[socketId].role = players[other_id].role
+      delete players[other_id] //A voir si ça supprime le ref vers tasks, j'espère pas
+    }
+    console.log(players[socketId])
+    connected_players[socketId].socket.emit('game',{
+      type : "game_state",
+      inventory : connected_players[socketId].inventory,
+      map: map,
+      started : game_started,
+      tasks : players[socketId].tasks,
+      pos : { x : players[socketId].x, y : players[socketId].y},
+      role : players[socketId].role
+    })
+    return;
+  }
+  connected_players[socketId].socket.emit('game',{
+    type : "game_state",
+    inventory : connected_players[socketId].inventory,
+    map: map,
+    position : null,
+    tasks : null,
+    pos : { x : players[socketId].x, y : players[socketId].y},
+    role : players[socketId].role
+  })
   connected_players[socketId].token = req.cookies.token;
-  console.log(connected_players)
+
+  //Ici on va mettre la logique de début de partie
+  console.log("Un joueur a rejoint : 1")
+  let nb_players = Object.keys(players).length
+  console.log("Un joueur a rejoint : " + nb_players)
+  //On va dire qu'on doit être 4 ?
+  if(nb_players == 1){
+    g_broadcast("4/4 joueurs, la partie va commencer")
+    launch_game().then(r => console.log("partie finie gg"))
+  }
+  else if (nb_players < 2) {
+    g_broadcast(nb_players + "/4 joueurs, la partie va commencer")
+  }
+
   res.status(201).json({ message: "Connexion réussie" });
 })
+
 
 app.post("/register", async (req, res) => {
     const { email, password } = req.body;
@@ -217,6 +281,8 @@ app.post("/register", async (req, res) => {
                 password: hashedPassword,
             },
         });
+        const token = createHash('sha256').update(randomUUID() + randomBytes(117)).digest('hex');
+        res.cookie('token',token , { maxAge: 3600000, httpOnly: true, sameSite:"strict"});
         res.status(201).json({ message: "Inscription réussie !" });
     } catch (error) {
         res.status(400).json({ error: "Email déjà utilisé." });
@@ -235,8 +301,9 @@ app.post("/login", async (req, res) => {
         return res.status(400).json({ error: "Utilisateur non trouvé" });
     }
 
-    const token = await bcrypt.hash(randomUUID(), 2);
-    res.cookie('token',token , { maxAge: 900000, httpOnly: true });
+    const token = createHash('sha256').update(randomUUID() + randomBytes(256)).digest('hex');
+    res.cookie('token',token , { maxAge: 3600000, httpOnly: true, sameSite:"strict"});
+
     await prisma.token.create({
       data: {
           token,
@@ -340,6 +407,9 @@ function shuffle(array) {
 }
 
 
+let votes = {}
+let game_started = false;
+
 const g_broadcast = msg => 
   io.emit('game', {
     type : "broadcast",
@@ -349,6 +419,10 @@ const g_broadcast = msg =>
 async function launch_game(){
   await sleep(1000)
   g_broadcast("La partie va commencer")
+  io.emit('game',{
+    type : 'started'
+  })
+  game_started = true;
   await sleep(1000)
   //Déroulement du début de la partie
   //On assigne les rôles, ça s'arrête là un peu
@@ -424,6 +498,8 @@ async function launch_game(){
       cur_night : nb_jours,
       time : 'night'
     })
+    //On reset les votes
+    votes = {}
     //On met chez players que personne n'a voté, pour vérif dans websocket ensuite
     Object.keys(players).forEach(socketId => {
       players[socketId].hasVoted = false;
@@ -432,7 +508,35 @@ async function launch_game(){
     //On met le sleep pour laisser les gens voter
     //await sleep(1000*60*0.5) //30s par ex
 
-    //Là on récup les votes mais jsp comment ils sont stockés encore
+    //On récup le max dans votes
+    let player_id = -1;
+    let max_votes = -1;
+
+    Object.keys(votes).forEach(socketId => {
+      if(max_votes < votes[socketId]){
+        player_id = socketId;
+        max_votes = votes[socketId]
+      }
+    })
+
+    //On fait un deuxième check pour savoir si il y a égalité
+    let found_eq = false;
+    Object.keys(votes).forEach(socketId => {
+      if(max_votes == votes[socketId] && player_id != socketId) found_eq = true;
+    })
+
+    if(found_eq){
+      g_broadcast("Il y a eu égalité, personne n'a été éliminé")
+    }
+    else {
+      //On reveal son rôle ou pas ?
+      io.emit('game', {
+        type : "elimination",
+        player_id : player_id
+      })
+    }
+
+
   }
 
 }
@@ -453,22 +557,12 @@ io.on('connection', (socket) => {
 
     socket.emit('positions', players);
     
-    //Ici on va mettre la logique de début de partie
-    console.log("Un joueur a rejoint : 1")
-    let nb_players = Object.keys(players).length
-    console.log("Un joueur a rejoint : " + nb_players)
-    //On va dire qu'on doit être 4 ?
-    if(nb_players == 2){
-      g_broadcast("4/4 joueurs, la partie va commencer")
-      launch_game().then(r => console.log("partie finie gg"))
-    }
-    else if (nb_players < 2) {
-      g_broadcast(nb_players + "/4 joueurs, la partie va commencer")
-    }
 
 
     socket.on('mouvement', (data) => {
-      
+      if(!game_started) return;
+      if(!data.player) return;
+      if(!connected_players[data.player]) return;
       if(players[socket.id]) {
         //On regarde si le temps parcouru est cohérent
         c_time = Date.now()
@@ -489,13 +583,19 @@ io.on('connection', (socket) => {
         io.emit('positions', players);
     });
     socket.on('open_chest', (data) => {
+      if(!game_started) return;
+      if(!data.player) return;
+      if(!connected_players[data.player]) return;
       if(!map[data.item_id]) return;
       //On peut mettre un check en disant qu'il peut être ouvert qu'une fois
       //En fait on doit le faire, mais j'ai trop la flemme
-      if(!players[data.player].inventory) players[data.player].inventory = []
-      players[data.player].inventory.push(data.item_type)
+      if(!connected_players[data.player].inventory) connected_players[data.player].inventory = []
+      connected_players[data.player].inventory.push(data.item_type)
     })
     socket.on('action', (data) => {
+      if(!game_started) return;
+      if(!data.player) return;
+      if(!connected_players[data.player]) return;
         /*
         Format de data : un dico avec quelques clés dont 1 systématique "type"
         type : berryBushPickUp -> un joueur a récup un berry bush, les clés sont alors 
@@ -505,12 +605,22 @@ io.on('connection', (socket) => {
          (- delete : un booléen pour savoir si le bush doit être suppr ?)
         */
         if(!data.type) return;
+        if(data.type == "vote") {
+          if(!players[data.player]) return;
+          if(players[data.player].hasVoted) return;
+          if(!data.vote) return;
+          if(!votes[data.vote]) 
+            votes[data.vote] = 1;
+          else
+            votes[data.vote] += 1;
+          players[data.player].hasVoted = true;
+        }
         if(data.type == "dropItem"){
-          if(!players[data.player].inventory) return;
+          if(!connected_players[data.player].inventory) return;
           
           let item_id = -1;
-          Object.keys(players[data.player].inventory).forEach(i => {
-            if(players[data.player].inventory[i] == data.item_type) {
+          Object.keys(connected_players[data.player].inventory).forEach(i => {
+            if(connected_players[data.player].inventory[i] == data.item_type) {
               //On peut jeter
               item_id = i;
             }
@@ -530,7 +640,7 @@ io.on('connection', (socket) => {
             }
           })
           //Et ciaooo
-          players[data.player].inventory.splice(item_id, 1);
+          connected_players[data.player].inventory.splice(item_id, 1);
 
         }
         if(data.type == "pickUp") {
@@ -548,7 +658,9 @@ io.on('connection', (socket) => {
           //On regarde si le joueur a une tâche à faire en rapport avec l'objet récup
           Object.values(players[data.player].tasks).forEach(val => {
             if(val.item_type == data.item_type && !val.completed){
-              val.qte--;
+              if(data.item_type == "wood")
+                val.qte-=4;
+              else val.qte -= 5;
               if(val.qte == 0){
                 //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
                 socket.emit('game',{
@@ -561,10 +673,17 @@ io.on('connection', (socket) => {
           })
 
           //On l'ajoute à l'inventaire
-          if(!players[data.player].inventory) players[data.player].inventory = []
-          players[data.player].inventory.push(data.item_type)
-          
-          map[data.item_id].capacity--;
+          if(!connected_players[data.player].inventory) connected_players[data.player].inventory = []
+          let nb_add = 5;
+          if(data.item_type == "wood")
+            nb_add = 4;
+          for(let i = 0; i < nb_add; i++)
+            connected_players[data.player].inventory.push(data.item_type)
+          console.log(connected_players[data.player].inventory)
+          if(data.item_type == "wood")
+            map[data.item_id].capacity-=4;
+          else 
+            map[data.item_id].capacity-=5;
           io.emit('action', data)
           if(map[data.item_id].capacity == 0){
             io.emit('remove', {
@@ -582,8 +701,9 @@ io.on('connection', (socket) => {
     // Gérer la déconnexion
     socket.on('disconnect', () => {
         console.log(`Joueur déconnecté : ${socket.id}`);
+        old_players[socket.id] = structuredClone(players[socket.id])
         delete players[socket.id];
-        delete connected_players[socket.id];
+        //delete connected_players[socket.id];
         io.emit('positions', players); // Mettre à jour la liste pour tous
     });
 });

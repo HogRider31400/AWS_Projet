@@ -14,7 +14,7 @@ document.querySelector('form').addEventListener('submit', async function(event) 
 
     const result = await response.json();
     if (response.ok) {
-        alert("Connexion réussie !");
+        //alert("Connexion réussie !");
         localStorage.setItem("isLoggedIn", "true"); 
         window.location.href = "/"; 
     } else {
