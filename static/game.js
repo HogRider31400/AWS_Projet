@@ -68,6 +68,7 @@ var game = new Phaser.Game(config)
     this.palmier = map.createLayer('palmier', [tileset1]); 
     this.bamboo = map.createLayer('bamboo', [tileset1]); 
     this.mapElements = map.createLayer('elements', [tileset2]); 
+    this.game_started = false;
     let layerEau = this.layerEau
     
     getAnimatedTiles(this);
@@ -140,9 +141,34 @@ var game = new Phaser.Game(config)
     //Fonction qui gère ce que la partie te dit
     //On reçoit avant tout le type dans data et on avise ensuite
     socket.on('game', (data) => {
+      if(data.type == "game_state") {
+        //On a inventory et map
+        let inventory = data.inventory
+        let map = data.map;
+        let started = data.started;
+        let pos = data.pos;
+        console.log(pos.x, pos.y, "aouuu")
+        this.player.x = pos.x
+        this.player.y = pos.y
+        console.log(data.tasks)
+        if(started)
+          this.game_started = true;
+        console.log(map)
+        Object.keys(map).forEach(id => {
+          if(!map[id].name) return; 
+          if(map[id].capacity != 0) return; //Rien à faire avec pour l'instant je pense
+          Object.values(this.elements).forEach(elem => {
+            if(elem.id != id) return;
+            elem.isNowDepleted();
+          })
+        })
+
+      }
       if(data.type == "broadcast") {
         console.log("On a reçu : " + data.message)
       }
+      if(data.type == "started")
+        this.game_started = true;
       if(data.type == "assign_role") {
         //Ici data.role c'est soit Traître soit Survivant
         console.log("Vous avez été assigné le rôle : " + data.role)
@@ -287,7 +313,8 @@ var game = new Phaser.Game(config)
         socket.emit('mouvement', {
             x: player.x,
             y: player.y,
-            direction: player.direction
+            direction: player.direction,
+            player : socket.id
         });
     }
     this.sendPlayerPosition(300,300)
