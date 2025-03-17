@@ -137,6 +137,36 @@ var game = new Phaser.Game(config)
 
 
 ///////////////SOCKET///////////////
+    //Fonction qui gère ce que la partie te dit
+    //On reçoit avant tout le type dans data et on avise ensuite
+    socket.on('game', (data) => {
+      if(data.type == "broadcast") {
+        console.log("On a reçu : " + data.message)
+      }
+      if(data.type == "assign_role") {
+        //Ici data.role c'est soit Traître soit Survivant
+        console.log("Vous avez été assigné le rôle : " + data.role)
+      }
+      if(data.type == "assign_tasks") {
+        console.log("Vous avez reçu les tâches suivantes")
+        console.log(data.tasks)
+      }
+      if(data.type == "completed_task") {
+        console.log("Vous avez complété : " + data.name)
+      }
+      if(data.type == "set_time") {
+        console.log("On a reçu des infos sur le temps")
+        if(data.time == "day"){
+          console.log("C'est le jour " + data.cur_day)
+        }
+        if(data.time == "night"){
+          console.log("C'est la nuit " + data.cur_night)
+          //Ici on doit s'occuper de faire en sorte que les gens votent
+        }
+      }
+    })
+
+
     socket.on('positions', (data) => {
       playersData = data;
       //console.log(data);
@@ -184,7 +214,7 @@ var game = new Phaser.Game(config)
     this.player.onAction('pickUpBerry', (berry_id) => {
       socket.emit('action', {
         type : 'pickUp',
-        item_type : "berryBush",
+        item_type : "berry",
         item_id : berry_id,
         player : socket.id
       })
@@ -194,7 +224,7 @@ var game = new Phaser.Game(config)
     this.player.onAction('pickUpWood', (wood_id) => {
       socket.emit('action', {
         type : 'pickUp',
-        item_type : "woodPlank",
+        item_type : "wood",
         item_id : wood_id,
         player : socket.id
       })
@@ -337,6 +367,34 @@ var game = new Phaser.Game(config)
       animatedTile.tile.index = animatedTile.tileAnimationData[animationIndex].tileid + animatedTile.firstgid;
     });
   }
+
+//Vue.js pour gérer la chatbox
+const app = Vue.createApp({
+  data() {
+      return {
+          messages: [], 
+          newMessage: ""
+      };
+  },
+  methods: {
+      sendMessage() {
+          if (this.newMessage.trim() !== "") {
+              socket.emit("chat-message", { player: playerName, message: this.newMessage });
+              this.newMessage = "";
+          }
+      }
+  },
+  mounted() {
+      socket.on("chat-message", (data) => {
+          this.messages.push(data);
+          this.$nextTick(() => {
+              const messagesContainer = document.getElementById("messages");
+              messagesContainer.scrollTop = messagesContainer.scrollHeight;
+          });
+      });
+  }
+});
+app.mount("#app");
 
   function updateOtherPlayers(scene) {
     for (let id in playersData) {

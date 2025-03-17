@@ -536,12 +536,12 @@
          "columns":8,
          "firstgid":421,
          "image":"vegetation.png",
-         "imageheight":192,
+         "imageheight":384,
          "imagewidth":256,
          "margin":0,
          "name":"vegetation",
          "spacing":0,
-         "tilecount":48,
+         "tilecount":96,
          "tileheight":32,
          "tiles":[
                 {
@@ -560,6 +560,20 @@
                 }, 
                 {
                  "id":37,
+                 "properties":[
+                        {
+                         "name":"capacity",
+                         "type":"int",
+                         "value":5
+                        }, 
+                        {
+                         "name":"name",
+                         "type":"string",
+                         "value":"woodPile"
+                        }]
+                }, 
+                {
+                 "id":72,
                  "properties":[
                         {
                          "name":"capacity",
