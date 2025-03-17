@@ -283,4 +283,20 @@ export class Player extends Phaser.GameObjects.Sprite {
         }
     }
 
+    updateInventory() {
+        const slots = document.querySelectorAll('.inventory-slot');
+
+        slots.forEach((slot, index) => {
+            slot.innerHTML = ''; // On efface juste le contenu du slot
+
+            if (this.inventory[index]) {
+                // Crée un élément texte (plus tard une image)
+                const text = document.createElement('span');
+                text.innerText = this.inventory[index];
+                slot.appendChild(text);
+            }
+        });
+    }
+    
+
 }
