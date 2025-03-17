@@ -670,6 +670,9 @@ io.on('connection', (socket) => {
     if(!connected_players[socket.id]) connected_players[socket.id] = {}
     connected_players[socket.id].socket = socket;
 
+    if(!connected_players[socket.id]) connected_players[socket.id] = {}
+    connected_players[socket.id].socket = socket;
+
     //socket.emit('positions', players);
   })
 
