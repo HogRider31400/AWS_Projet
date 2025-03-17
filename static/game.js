@@ -22,7 +22,11 @@ var config = {
       update
     }
   }
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 const socket = await io();
+await socket.emit('connect_game');
+await sleep(500);
 let playersData = {};
 let otherPlayers = {}; 
 let playersGroup;
