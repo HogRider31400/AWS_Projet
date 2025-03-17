@@ -1,5 +1,34 @@
-window.addEventListener('DOMContentLoaded', () => {
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+window.addEventListener('DOMContentLoaded', async () => {
+    let socket = await io();
+
+    socket.on('players', data => {
+      console.log(data)
+    })
+
+    socket.on('go_to_game', data => {
+      console.log("on lance !!")
+      window.location.href = '/game'
+    })
+
+    await sleep(500)
+    console.log(socket.id)
     const roomData = JSON.parse(localStorage.getItem('roomData'));
+    const response = await fetch("/room", {
+      method: "POST",
+      headers: {
+          "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        room_id : roomData.room,
+        socket_id : socket.id,
+        player : roomData.pseudo
+      })
+    });
+
+    const result = await response.json();
     
     if (roomData) {
       const modeDisplay = document.createElement('div');
@@ -21,8 +50,11 @@ window.addEventListener('DOMContentLoaded', () => {
         playersGrid.appendChild(cell);
       }
     }
+
+
      
     document.querySelector('.lobby-btn').addEventListener('click', () => {
+      console.log("ptnnn")
         const roomData = JSON.parse(localStorage.getItem('roomData'));
         if (roomData) {
             const playersGrid = document.querySelector('.players-grid');
@@ -45,4 +77,17 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     });
 });         
-  
+
+document.getElementById('launch-button').addEventListener('click', async function (e) {
+  e.preventDefault();
+  const roomData = JSON.parse(localStorage.getItem('roomData'));
+  console.log("ptnnn")
+  const response = await fetch("/launch_room", {
+    method: "POST",
+    headers: {
+        "Content-Type": "application/json"
+    },
+    body: JSON.stringify({room_id : roomData.room})
+  });
+  const result = await response.json();
+})

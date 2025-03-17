@@ -40,15 +40,18 @@
                 <div class="form-group">
                     <label for="players">Nombre de joueurs :</label>
                     <select id="players" name="players">
+                        <option value="2">2</option>
+                        <option value="3">3</option>
                         <option value="4">4</option>
-                        <option value="8">8</option>
-                        <option value="12">12</option>
                     </select>
                 </div>
                 
                 <div class="button-group">
                     <button type="submit" class="cta-button create-room">Create Room</button>
                     <button type="button" class="cta-button join-button">Join Room</button>
+                </div>
+                <div class="form-group">
+                    <input type="text" id="room-code" name="room-code" placeholder="Entrez le code de la room">
                 </div>
             </form>
         </main>

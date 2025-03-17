@@ -129,6 +129,7 @@ export class Player extends Phaser.GameObjects.Sprite {
     {
         
         super.preUpdate(time, delta);
+        if(!this.scene.game_started) return;
 
         //Update de joueur non actif
         if(this.isActive == false){
