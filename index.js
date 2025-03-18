@@ -201,13 +201,14 @@ app.post('/create_room', async function (req, res){
     res.redirect('/')
   //console.log("aaaaa")
   
-  let {difficulty, players, player} = req.body;
+  let {gamemode, players, player} = req.body;
   
   let room_code = generate()
   rooms[room_code] = {
     owner : req.cookies.token,
     nb_players : players,
-    players : []
+    players : [],
+    gamemode : gamemode
   };
   //console.log(rooms)
   console.log("la room est", room_code)
@@ -238,6 +239,7 @@ app.post('/room', async function (req, res){
   //console.log(rooms)
   if(rooms[room_id] == undefined) return
   if(rooms[room_id].players == undefined) return
+  if(game_started[room_id]) return;
   //rooms[room_id].players.push(req.cookies.token)
   //console.log(socketId_socket)
   //console.log(req.body)
@@ -265,6 +267,11 @@ app.post('/room', async function (req, res){
 
   io.to(room_id+"/lobby").emit("players", room_players);
   console.log(room_players)
+
+  res.send({
+    nb_players : rooms[room_id].nb_players,
+    gamemode : rooms[room_id].gamemode
+  })
 
 })
 
@@ -356,12 +363,12 @@ app.post("/connect_to_game", async (req,res) => {
   })
   console.log("Un joueur a rejoint : " + p_count)
   //On va dire qu'on doit être 4 ?
-  if(p_count == 1){
-    g_broadcast("4/4 joueurs, la partie va commencer", room_id)
+  if(p_count == rooms[room_id].nb_players){
+    g_broadcast("Tous les joueurs sont là, la partie va commencer", room_id)
     launch_game(room_id).then(r => console.log("partie finie gg"))
   }
-  else if (p_count < 2) {
-    g_broadcast(p_count + "/4 joueurs, la partie va commencer", room_id)
+  else if (p_count < rooms[room_id].nb_players) {
+    g_broadcast(p_count + "/"+ rooms[room_id].nb_players +" joueurs, la partie va commencer", room_id)
   }
 
   res.status(201).json({ message: "Connexion réussie" });
@@ -530,6 +537,7 @@ async function launch_game(room_id){
   })
   game_started[room_id] = true;
   await sleep(1000)
+  if(rooms[room_id].gamemode == "Sandbox") return;
   //Déroulement du début de la partie
   //On assigne les rôles, ça s'arrête là un peu
   let roles = ["Traître", "Survivant", "Survivant", "Survivant"]
@@ -752,18 +760,19 @@ io.on('connection', (socket) => {
           })
           if(item_id == -1) return;
           //On regarde si on complète une task avec
-          Object.values(players[data.player].tasks).forEach(val => {
-            if(val.name == T_THROW_RES && !val.completed){
-              val.qte--;
-              if(val.qte == 0){ 
-                val.completed = true
-                socket.emit('game',{
-                  type : 'completed_task',
-                  name : val.name
-                })
+          if(players[data.player].task)
+            Object.values(players[data.player].tasks).forEach(val => {
+              if(val.name == T_THROW_RES && !val.completed){
+                val.qte--;
+                if(val.qte == 0){ 
+                  val.completed = true
+                  socket.emit('game',{
+                    type : 'completed_task',
+                    name : val.name
+                  })
+                }
               }
-            }
-          })
+            })
           //Et ciaooo
           connected_players[data.player].inventory.splice(item_id, 1);
 
@@ -781,21 +790,22 @@ io.on('connection', (socket) => {
           if (distance(px,py,ix,iy) > 100) return; //il est trop loin pour le faire
           //console.log("ahouuuu")
           //On regarde si le joueur a une tâche à faire en rapport avec l'objet récup
-          Object.values(players[data.player].tasks).forEach(val => {
-            if(val.item_type == data.item_type && !val.completed){
-              if(data.item_type == "wood")
-                val.qte-=4;
-              else val.qte -= 5;
-              if(val.qte == 0){
-                //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
-                socket.emit('game',{
-                  type : "completed_task",
-                  name : val.name
-                })
-                val.completed = true;
+          if(players[data.player].task)
+            Object.values(players[data.player].tasks).forEach(val => {
+              if(val.item_type == data.item_type && !val.completed){
+                if(data.item_type == "wood")
+                  val.qte-=4;
+                else val.qte -= 5;
+                if(val.qte == 0){
+                  //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
+                  socket.emit('game',{
+                    type : "completed_task",
+                    name : val.name
+                  })
+                  val.completed = true;
+                }
               }
-            }
-          })
+            })
 
           //On l'ajoute à l'inventaire
           if(!connected_players[data.player].inventory) connected_players[data.player].inventory = []
