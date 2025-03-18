@@ -6,6 +6,7 @@
   <link rel="stylesheet" href="/static/interface/css/style.css">
   <link rel="stylesheet" href="/static/interface/css/inventory.css">
   <link rel="stylesheet" href="/static/interface/css/tasks.css">
+  <link rel="stylesheet" href="/static/interface/css/vote.css">
   <script src="//cdn.jsdelivr.net/npm/phaser@3.87.0/dist/phaser.min.js"></script>
   <script type="module" src="/static/game.js"></script>
   <script src="https://cdn.socket.io/4.8.1/socket.io.min.js" integrity="sha384-mkQ3/7FUtcGyoppY6bz/PORYoGqOl7/aSUMn2ymDOJcapfS6PHqxhRTMh1RR0Q6+" crossorigin="anonymous"></script>
@@ -40,6 +41,15 @@
     <div id="task-list" class="task-list" style="display: none;">
     </div>
   </div>
+  <div id="voteModal" class="modal">
+    <div class="modal-content">
+      <h2>Votez pour le traître</h2>
+      <p>Choisissez le joueur suspect :</p>
+      <div id="playersList"></div>
+      <button id="cancelVote">Annuler</button>
+    </div>
+  </div>
   <script src="/static/interface/scripts/tasks.js"></script>
+  <script src="/static/interface/scripts/vote.js"></script>
 </body>
 </html>
