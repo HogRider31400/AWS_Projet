@@ -283,4 +283,20 @@ export class Player extends Phaser.GameObjects.Sprite {
         }
     }
 
+    updateInventory() {
+        const slots = document.querySelectorAll('.inventory-slot');
+    
+        // On efface juste le contenu interne de chaque slot (mais on garde la div)
+        slots.forEach((slot, index) => {
+    
+            // Si un objet existe dans l'inventaire à cet index
+            if (this.inventory[index]) {
+                slot.innerHTML = ''; // Efface le contenu précédent
+                const text = document.createElement('span');
+                text.innerText = this.inventory[index];
+                slot.appendChild(text);
+            }
+        });
+    }    
+
 }

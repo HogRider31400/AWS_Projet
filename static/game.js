@@ -274,11 +274,12 @@ var game = new Phaser.Game(config)
     this.player.onAction('openChest', (chest_id) => {
       const items = [
         { type: 'sceau', id: '1' },
-        { type: 'pistolet', id: '2' },
+        { type: 'couteau', id: '2' },
         { type: 'hache', id: '3' }
       ];
       const randomIndex = Math.floor(Math.random() * items.length);
       const item = items[randomIndex];
+      this.player.inventory.push(item.type);
 
       socket.emit('open_chest', { 
         type : 'openChest',
