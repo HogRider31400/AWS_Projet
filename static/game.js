@@ -22,11 +22,7 @@ var config = {
       update
     }
   }
-
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 const socket = await io();
-await socket.emit('connect_game');
-await sleep(500);
 let playersData = {};
 let otherPlayers = {}; 
 let playersGroup;
@@ -72,7 +68,6 @@ var game = new Phaser.Game(config)
     this.palmier = map.createLayer('palmier', [tileset1]); 
     this.bamboo = map.createLayer('bamboo', [tileset1]); 
     this.mapElements = map.createLayer('elements', [tileset2]); 
-    this.game_started = false;
     let layerEau = this.layerEau
     
     getAnimatedTiles(this);
@@ -145,34 +140,9 @@ var game = new Phaser.Game(config)
     //Fonction qui gère ce que la partie te dit
     //On reçoit avant tout le type dans data et on avise ensuite
     socket.on('game', (data) => {
-      if(data.type == "game_state") {
-        //On a inventory et map
-        let inventory = data.inventory
-        let map = data.map;
-        let started = data.started;
-        let pos = data.pos;
-        console.log(pos.x, pos.y, "aouuu")
-        this.player.x = pos.x
-        this.player.y = pos.y
-        console.log(data.tasks)
-        if(started)
-          this.game_started = true;
-        console.log(map)
-        Object.keys(map).forEach(id => {
-          if(!map[id].name) return; 
-          if(map[id].capacity != 0) return; //Rien à faire avec pour l'instant je pense
-          Object.values(this.elements).forEach(elem => {
-            if(elem.id != id) return;
-            elem.isNowDepleted();
-          })
-        })
-
-      }
       if(data.type == "broadcast") {
         console.log("On a reçu : " + data.message)
       }
-      if(data.type == "started")
-        this.game_started = true;
       if(data.type == "assign_role") {
         //Ici data.role c'est soit Traître soit Survivant
         console.log("Vous avez été assigné le rôle : " + data.role)
@@ -194,9 +164,6 @@ var game = new Phaser.Game(config)
           //Ici on doit s'occuper de faire en sorte que les gens votent
         }
       }
-      if(data.type == "elimination"){
-        console.log("Le joueur " + data.player_id + " a été eliminé")
-      }
     })
 
 
@@ -214,7 +181,11 @@ var game = new Phaser.Game(config)
        (- delete : un booléen pour savoir si le bush doit être suppr ?)
       */
       if(!data.type) return;
-      
+      if(data.type == "berryBushPickUp") {
+        //On fait l'action ici
+        //Pour l'instant : rien
+        console.log(data.player + " a recup une baie rouge")
+      }
     })
 
     socket.on('remove', (data) => {
@@ -279,7 +250,7 @@ var game = new Phaser.Game(config)
       ];
       const randomIndex = Math.floor(Math.random() * items.length);
       const item = items[randomIndex];
-      this.player.inventory.push(item.type);
+      this.player.inventory.push(item);
 
       socket.emit('open_chest', { 
         type : 'openChest',
@@ -318,8 +289,7 @@ var game = new Phaser.Game(config)
         socket.emit('mouvement', {
             x: player.x,
             y: player.y,
-            direction: player.direction,
-            player : socket.id
+            direction: player.direction
         });
     }
     this.sendPlayerPosition(300,300)

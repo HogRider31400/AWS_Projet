@@ -18,7 +18,7 @@ document.getElementById("left-arrow").addEventListener("click", function() {
     updateCharacter();
 });
 
-document.querySelector('.create-room').addEventListener('click', async function(e) {
+document.querySelector('.create-room').addEventListener('click', function(e) {
     e.preventDefault();
     
     const pseudo = document.getElementById('pseudo').value;
@@ -30,34 +30,10 @@ document.querySelector('.create-room').addEventListener('click', async function(
     
     characterBg = characterBg.replace(/url\(["']?/, '').replace(/["']?\)$/, '');
     
+    const roomData = { pseudo, difficulty, players, characterBg };
     
-    const response = await fetch("/create_room", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({difficulty, players, player : pseudo})
-    });
-    const result = await response.json();
-    if(result.room){
-        const roomData = { pseudo, difficulty, players, characterBg, room : result.room};
-        localStorage.setItem('roomData', JSON.stringify(roomData));
-        window.location.href = "/lobby"
-    }
-
-});
-
-document.querySelector('.join-button').addEventListener('click', async function (e) {
-    e.preventDefault();
-
-    const pseudo = document.getElementById('pseudo').value;
-    const room = document.getElementById('room-code').value;
-    const characterElement = document.getElementById('character-circle');
-    let characterBg = window.getComputedStyle(characterElement).backgroundImage;
-    
-    characterBg = characterBg.replace(/url\(["']?/, '').replace(/["']?\)$/, '');
-    const roomData = { pseudo, difficulty : null, players : null, characterBg, room : room};
     localStorage.setItem('roomData', JSON.stringify(roomData));
-    window.location.href = "/lobby"
-})
+    
+    window.location.href = 'lobby';
+  });
   
