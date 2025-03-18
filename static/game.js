@@ -22,7 +22,11 @@ var config = {
       update
     }
   }
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
 const socket = await io();
+await socket.emit('connect_game');
+await sleep(500);
 let playersData = {};
 let otherPlayers = {}; 
 let playersGroup;
@@ -270,11 +274,12 @@ var game = new Phaser.Game(config)
     this.player.onAction('openChest', (chest_id) => {
       const items = [
         { type: 'sceau', id: '1' },
-        { type: 'pistolet', id: '2' },
+        { type: 'couteau', id: '2' },
         { type: 'hache', id: '3' }
       ];
       const randomIndex = Math.floor(Math.random() * items.length);
       const item = items[randomIndex];
+      this.player.inventory.push(item.type);
 
       socket.emit('open_chest', { 
         type : 'openChest',

@@ -17,8 +17,7 @@ export function getImpostorTasks() {
         dropItem,
         openChest,
         throwItem,
-        burnWood, //il faut trouver du feu premièrerment
-        gun
+        knife
     };
 }
 
@@ -36,6 +35,8 @@ export function pickUpBerry(player, berryBush) {
     player.scene.elements = player.scene.elements.filter(element => element !== berryBush);
     const elementsLayer = player.scene.map.getLayer('elements').tilemapLayer;
     elementsLayer.removeTileAt(berryBush.tile.x, berryBush.tile.y);
+
+    player.updateInventory();
     //return player.inventory;
 }
 
@@ -53,6 +54,8 @@ export function pickUpWood(player, woodPile) {
     player.scene.elements = player.scene.elements.filter(element => element !== woodPile);
     const elementsLayer = player.scene.map.getLayer('elements').tilemapLayer;
     elementsLayer.removeTileAt(woodPile.tile.x, woodPile.tile.y);
+
+    player.updateInventory();
     //return player.inventory;
 }
 
@@ -143,10 +146,6 @@ export function throwItem(player) {
     }
 }
 
-export function burnWood(player) {
-
-}
-
-export function gun(player) {
+export function knife(player) {
 
 }

@@ -15,8 +15,9 @@ const saltRounds = 10;
 const prisma = new PrismaClient();
 const PORT = 80;
 let players = {};
-
-
+let rooms = {};
+let socketId_socket = {};
+let votes = {};
 (async () => {
   try {
       await prisma.$connect();
@@ -125,8 +126,8 @@ async function isConnected(req){
   if(req.cookies.token){
     
     const token = await prisma.token.findUnique({ where : { token : req.cookies.token }})
-    console.log(token)
-    console.log((new Date() / 1000) - (new Date(token.createdAt) / 1000))
+    //console.log(token)
+    //console.log((new Date() / 1000) - (new Date(token.createdAt) / 1000))
     if (token){
       const diff = (new Date() / 1000) - (new Date(token.createdAt) / 1000);
       if (diff <= 3600) return true;
@@ -183,6 +184,89 @@ app.get('/disconnect', async function (req, res) {
   res.redirect('/');
 
 });
+// https://stackoverflow.com/questions/73915546/how-to-generate-a-random-5-letter-code-and-give-filters
+function generate(len = 5){
+  let charset = "1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM!@#$%^&*()"
+  let result = ""
+  for(let i = 0; i<len;i++ ){
+    let charsetlength = charset.length
+    result+=charset.charAt(Math.floor(Math.random() * charsetlength))
+  }
+  return result;
+}
+
+app.post('/create_room', async function (req, res){
+  //console.log("aaaaa")
+  if(!await isConnected(req))
+    res.redirect('/')
+  //console.log("aaaaa")
+  
+  let {difficulty, players, player} = req.body;
+  
+  let room_code = generate()
+  rooms[room_code] = {
+    owner : req.cookies.token,
+    nb_players : players,
+    players : []
+  };
+  //console.log(rooms)
+  console.log("la room est", room_code)
+  res.status(201).json({ room: room_code });
+
+})
+
+app.post('/launch_room', async function (req, res){
+  if(!await isConnected(req))
+    return
+  let {room_id} = req.body;
+  console.log("slt", room_id)
+  if(!rooms[room_id]) return;
+  //console.log(rooms[room_id].owner, req.cookies.token)
+  //console.log(rooms[room_id].players.length, rooms[room_id].nb_players)
+  if(rooms[room_id].owner != req.cookies.token) return;
+  if(rooms[room_id].players.length < rooms[room_id].nb_players) return;
+  rooms[room_id].launched = true;
+  io.to(room_id+"/lobby").emit('go_to_game',{})
+})
+
+app.post('/room', async function (req, res){
+  if(!await isConnected(req))
+    return
+  //Faudra penser à vérif qu'on est pas déjà dedans
+  let {room_id, socket_id, player} = req.body;
+  //console.log("aaa " + room_id + " " + socket_id);
+  //console.log(rooms)
+  if(rooms[room_id] == undefined) return
+  if(rooms[room_id].players == undefined) return
+  //rooms[room_id].players.push(req.cookies.token)
+  //console.log(socketId_socket)
+  //console.log(req.body)
+  let socket = null;
+  Object.keys(socketId_socket).forEach(id => {
+    if(id == socket_id) socket = socketId_socket[id].socket;
+  })
+
+  if(!socket) return;
+  socket.join(room_id + "/lobby");
+  rooms[room_id].players.push(
+      {
+        token : req.cookies.token,
+        player : player,
+        socketId : socket_id,
+        socket : socket
+      }
+  )
+  
+  let room_players = [];
+  Object.values(rooms[room_id].players).forEach(val => {
+    if(val.player == undefined) return;
+    room_players.push(val.player);
+  })
+
+  io.to(room_id+"/lobby").emit("players", room_players);
+  console.log(room_players)
+
+})
 
 //Ici on met socketId : token je pense (ou l'inverse en fonction des besoins)
 connected_players = {}
@@ -192,7 +276,19 @@ app.post("/connect_to_game", async (req,res) => {
     res.status(400).json({ error: "Token inconnu ou trop ancien." });
     return;
   }
-  console.log(req.body)
+  //On récup sa room !!
+  let room_id = null;
+  Object.keys(rooms).forEach(id => {
+    Object.values(rooms[id].players).forEach(val => {
+      if(val.token == req.cookies.token){
+        room_id = id;
+      }
+    })
+  })
+
+  //Le frr est pas co
+  if(room_id == null) return;
+  console.log("il est là dans la room", room_id)
   const {socketId} = req.body;
   if(!connected_players[socketId]) connected_players[socketId] = {}
   //if(!connected_players[socketId]) connected_players[socketId] = {}
@@ -205,12 +301,13 @@ app.post("/connect_to_game", async (req,res) => {
       return;
     }
   })
+  connected_players[socketId].socket.join(room_id+"/game")
+  connected_players[socketId].room_id = room_id;
   if(other_id){
     let o = connected_players[other_id];
     connected_players[socketId].inventory = o.inventory
     connected_players[socketId].token = o.token
     delete connected_players[other_id];
-    let tasks = [];
     if(old_players[other_id]) {
       console.log("youhou")
       players[socketId].x = old_players[other_id].x
@@ -225,12 +322,13 @@ app.post("/connect_to_game", async (req,res) => {
       players[socketId].role = players[other_id].role
       delete players[other_id] //A voir si ça supprime le ref vers tasks, j'espère pas
     }
+    if(votes[other_id]) votes[socketId] = votes[other_id]
     console.log(players[socketId])
     connected_players[socketId].socket.emit('game',{
       type : "game_state",
       inventory : connected_players[socketId].inventory,
       map: map,
-      started : game_started,
+      started : game_started[room_id],
       tasks : players[socketId].tasks,
       pos : { x : players[socketId].x, y : players[socketId].y},
       role : players[socketId].role
@@ -243,6 +341,7 @@ app.post("/connect_to_game", async (req,res) => {
     map: map,
     position : null,
     tasks : null,
+    started : null,
     pos : { x : players[socketId].x, y : players[socketId].y},
     role : players[socketId].role
   })
@@ -250,15 +349,19 @@ app.post("/connect_to_game", async (req,res) => {
 
   //Ici on va mettre la logique de début de partie
   console.log("Un joueur a rejoint : 1")
-  let nb_players = Object.keys(players).length
-  console.log("Un joueur a rejoint : " + nb_players)
+  let p_count = 0
+  Object.keys(players).forEach(id => {
+    if(connected_players[id].room_id != room_id) return;
+    p_count++;
+  })
+  console.log("Un joueur a rejoint : " + p_count)
   //On va dire qu'on doit être 4 ?
-  if(nb_players == 1){
-    g_broadcast("4/4 joueurs, la partie va commencer")
-    launch_game().then(r => console.log("partie finie gg"))
+  if(p_count == 1){
+    g_broadcast("4/4 joueurs, la partie va commencer", room_id)
+    launch_game(room_id).then(r => console.log("partie finie gg"))
   }
-  else if (nb_players < 2) {
-    g_broadcast(nb_players + "/4 joueurs, la partie va commencer")
+  else if (p_count < 2) {
+    g_broadcast(p_count + "/4 joueurs, la partie va commencer", room_id)
   }
 
   res.status(201).json({ message: "Connexion réussie" });
@@ -273,7 +376,6 @@ app.post("/register", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, saltRounds);
-
     try {
         const user = await prisma.user.create({
             data: {
@@ -282,6 +384,12 @@ app.post("/register", async (req, res) => {
             },
         });
         const token = createHash('sha256').update(randomUUID() + randomBytes(117)).digest('hex');
+        await prisma.token.create({
+          data: {
+              token,
+              email,
+          },
+        });
         res.cookie('token',token , { maxAge: 3600000, httpOnly: true, sameSite:"strict"});
         res.status(201).json({ message: "Inscription réussie !" });
     } catch (error) {
@@ -406,23 +514,21 @@ function shuffle(array) {
   }
 }
 
+let game_started = {};
 
-let votes = {}
-let game_started = false;
-
-const g_broadcast = msg => 
-  io.emit('game', {
+const g_broadcast = (msg,room_id) => 
+  io.to(room_id + "/game").emit('game', {
     type : "broadcast",
     message : msg
   })
 
-async function launch_game(){
+async function launch_game(room_id){
   await sleep(1000)
-  g_broadcast("La partie va commencer")
-  io.emit('game',{
+  g_broadcast("La partie va commencer", room_id)
+  io.to(room_id+"/game").emit('game',{
     type : 'started'
   })
-  game_started = true;
+  game_started[room_id] = true;
   await sleep(1000)
   //Déroulement du début de la partie
   //On assigne les rôles, ça s'arrête là un peu
@@ -432,6 +538,7 @@ async function launch_game(){
 
 
   Object.keys(players).forEach((socketId) =>  {
+    if(connected_players[socketId].room_id != room_id) return;
     let cur = players[socketId]
     let role = roles[cur_idx]
     players[socketId].role = role
@@ -448,7 +555,7 @@ async function launch_game(){
   for(let nb_jours = 1; nb_jours <= 5; nb_jours++){
     //Déroulement de l'orga d'un jour :
     //On dit à tout le monde que c'est le jour
-    io.emit('game',{
+    io.to(room_id+"/game").emit('game',{
       type: 'set_time',
       cur_day : nb_jours,
       time : 'day'
@@ -459,6 +566,7 @@ async function launch_game(){
     shuffle(tasks.traitors)
     let cur_c = 0;
     Object.keys(players).forEach((socketId) => {
+      if(connected_players[socketId].room_id != room_id) return;
       let cur = players[socketId]
       let role = cur.role
 
@@ -493,16 +601,17 @@ async function launch_game(){
     //On dit à tlm que c'est la nuit
     //On demande à tlm de voter
     //On passe au jour, on peut mettre les checks de ressources etc ici aussi !
-    io.emit('game',{
+    io.to(room_id+"/game").emit('game',{
       type: 'set_time',
       cur_night : nb_jours,
       time : 'night'
     })
     //On reset les votes
-    votes = {}
     //On met chez players que personne n'a voté, pour vérif dans websocket ensuite
     Object.keys(players).forEach(socketId => {
+      if(connected_players[socketId].room_id != room_id) return;
       players[socketId].hasVoted = false;
+      votes[socketId] = 0
     })
 
     //On met le sleep pour laisser les gens voter
@@ -513,6 +622,7 @@ async function launch_game(){
     let max_votes = -1;
 
     Object.keys(votes).forEach(socketId => {
+      if(connected_players[socketId].room_id != room_id) return;
       if(max_votes < votes[socketId]){
         player_id = socketId;
         max_votes = votes[socketId]
@@ -522,15 +632,16 @@ async function launch_game(){
     //On fait un deuxième check pour savoir si il y a égalité
     let found_eq = false;
     Object.keys(votes).forEach(socketId => {
+      if(connected_players[socketId].room_id != room_id) return;
       if(max_votes == votes[socketId] && player_id != socketId) found_eq = true;
     })
 
     if(found_eq){
-      g_broadcast("Il y a eu égalité, personne n'a été éliminé")
+      g_broadcast("Il y a eu égalité, personne n'a été éliminé", room_id)
     }
     else {
       //On reveal son rôle ou pas ?
-      io.emit('game', {
+      io.to(room_id + "/game").emit('game', {
         type : "elimination",
         player_id : player_id
       })
@@ -545,6 +656,10 @@ async function launch_game(){
 //On va dire que quelqu'un qui se connecte veut qu'on lance la partie, va falloir que je réécrive tout quand y'aura les lobbys pg
 
 io.on('connection', (socket) => {
+  if(!socketId_socket[socket.id]) socketId_socket[socket.id] = {};
+  socketId_socket[socket.id].socket = socket;
+
+  socket.on('connect_game', (data) => {
     console.log(`Joueur connecté : ${socket.id}`);
     players[socket.id] = {
         x: Math.floor(Math.random() * 800),
@@ -555,14 +670,20 @@ io.on('connection', (socket) => {
     if(!connected_players[socket.id]) connected_players[socket.id] = {}
     connected_players[socket.id].socket = socket;
 
-    socket.emit('positions', players);
+    if(!connected_players[socket.id]) connected_players[socket.id] = {}
+    connected_players[socket.id].socket = socket;
+
+    //socket.emit('positions', players);
+  })
+
     
 
 
     socket.on('mouvement', (data) => {
-      if(!game_started) return;
       if(!data.player) return;
       if(!connected_players[data.player]) return;
+      if(!connected_players[data.player].room_id) return;
+      if(!game_started[connected_players[data.player].room_id]) return;
       if(players[socket.id]) {
         //On regarde si le temps parcouru est cohérent
         c_time = Date.now()
@@ -580,12 +701,18 @@ io.on('connection', (socket) => {
         players[socket.id].y = data.y
         players[socket.id].direction = data.direction
         //console.log(data);
-        io.emit('positions', players);
+        let r_players = {};
+        Object.keys(players).forEach(id => {
+          if(connected_players[id].room_id != connected_players[socket.id].room_id) return;
+          r_players[id] = players[id]
+        }) 
+        io.to(connected_players[socket.id].room_id+"/game").emit('positions', r_players);
     });
     socket.on('open_chest', (data) => {
-      if(!game_started) return;
       if(!data.player) return;
       if(!connected_players[data.player]) return;
+      if(!connected_players[data.player].room_id) return;
+      if(!game_started[connected_players[data.player].room_id]) return;
       if(!map[data.item_id]) return;
       //On peut mettre un check en disant qu'il peut être ouvert qu'une fois
       //En fait on doit le faire, mais j'ai trop la flemme
@@ -593,9 +720,10 @@ io.on('connection', (socket) => {
       connected_players[data.player].inventory.push(data.item_type)
     })
     socket.on('action', (data) => {
-      if(!game_started) return;
       if(!data.player) return;
       if(!connected_players[data.player]) return;
+      if(!connected_players[data.player].room_id) return;
+      if(!game_started[connected_players[data.player].room_id]) return;
         /*
         Format de data : un dico avec quelques clés dont 1 systématique "type"
         type : berryBushPickUp -> un joueur a récup un berry bush, les clés sont alors 
@@ -684,9 +812,9 @@ io.on('connection', (socket) => {
             map[data.item_id].capacity-=4;
           else 
             map[data.item_id].capacity-=5;
-          io.emit('action', data)
+          io.to(connected_players[socket.id].room_id).emit('action', data)
           if(map[data.item_id].capacity == 0){
-            io.emit('remove', {
+            io.to(connected_players[socket.id].room_id).emit('remove', {
               item_id : data.item_id
             })
           }
@@ -695,7 +823,7 @@ io.on('connection', (socket) => {
   //Gestion de chat 
   socket.on("chat-message", (data) => {
             console.log(`Message reçu de ${data.player}: ${data.message}`);
-            io.emit("chat-message", data); // Envoie le message à tous les joueurs
+            io.to(connected_players[socket.id].room_id).emit("chat-message", data); // Envoie le message à tous les joueurs
         });
 
     // Gérer la déconnexion
@@ -703,8 +831,29 @@ io.on('connection', (socket) => {
         console.log(`Joueur déconnecté : ${socket.id}`);
         old_players[socket.id] = structuredClone(players[socket.id])
         delete players[socket.id];
+        delete socketId_socket[socket.id];
+
+
+        Object.keys(rooms).forEach(room_id => {
+          let room = rooms[room_id]
+          if(room.launched) return;
+          let id = -1;
+          Object.keys(room.players).forEach(c_id => {
+            if(room.players[c_id].socketId == socket.id)
+              id = c_id;
+          })
+          if(id != -1){
+            rooms[room_id].players.splice(id,1);
+          }
+          let room_players = [];
+          Object.values(rooms[room_id].players).forEach(val => {
+            room_players.push(val.player);
+          })
+          io.to(room_id+"/lobby").emit("players", room_players)
+        })
+
         //delete connected_players[socket.id];
-        io.emit('positions', players); // Mettre à jour la liste pour tous
+        //io.emit('positions', players); // Mettre à jour la liste pour tous
     });
 });
 
