@@ -24,6 +24,11 @@ export function getImpostorTasks() {
 export function pickUpBerry(player, berryBush) {
     if(!berryBush) return;
 
+    if (player.inventory.length + 5 > 8) {
+        console.log("L'inventaire est déjà plein !");
+        return;
+    }
+
     console.log("pickup Item : ", berryBush);
     const capacity = berryBush.tile.properties.capacity;
     for (let i = 0; i < capacity; i++) {
@@ -42,6 +47,11 @@ export function pickUpBerry(player, berryBush) {
 
 export function pickUpWood(player, woodPile) {
     if(!woodPile) return;
+
+    if (player.inventory.length + 4 > 8) {
+        console.log("L'inventaire est déjà plein !");
+        return;
+    }
 
     console.log("pickup Item : ", woodPile);
     const capacity = woodPile.tile.properties.capacity;
@@ -107,6 +117,7 @@ export function dropItem(player) {
                 }
                 return true;
             });
+            player.updateInventory();
     
             console.log("Inventaire après dépôt :", player.inventory);
             return item

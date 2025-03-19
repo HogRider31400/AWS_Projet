@@ -279,7 +279,12 @@ var game = new Phaser.Game(config)
       ];
       const randomIndex = Math.floor(Math.random() * items.length);
       const item = items[randomIndex];
+      if (this.player.inventory.length + 1 > 8) {
+        console.log("L'inventaire est déjà plein ! ");
+        return;
+      }
       this.player.inventory.push(item.type);
+      this.player.updateInventory();
 
       socket.emit('open_chest', { 
         type : 'openChest',

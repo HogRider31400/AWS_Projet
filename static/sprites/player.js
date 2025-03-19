@@ -129,7 +129,7 @@ export class Player extends Phaser.GameObjects.Sprite {
     {
         
         super.preUpdate(time, delta);
-        if(!this.scene.game_started) return;
+        //if(!this.scene.game_started) return;
 
         //Update de joueur non actif
         if(this.isActive == false){
@@ -287,13 +287,20 @@ export class Player extends Phaser.GameObjects.Sprite {
         const slots = document.querySelectorAll('.inventory-slot');
 
         slots.forEach((slot, index) => {
-            slot.innerHTML = ''; // On efface juste le contenu du slot
 
             if (this.inventory[index]) {
-                // Crée un élément texte (plus tard une image)
-                const text = document.createElement('span');
-                text.innerText = this.inventory[index];
-                slot.appendChild(text);
+                slot.innerHTML = ''; // On efface le contenu du slot
+
+                const img = document.createElement('img');
+                img.src = `/static/tilemaps/${this.inventory[index]}.png`;
+                img.alt = this.inventory[index];
+                img.classList.add('inventory-item');
+            
+                slot.appendChild(img); 
+            } else {
+                slot.innerHTML = ''; // On efface le contenu du slot
+                // Si le slot est vide, afficher "Item X"
+                slot.innerText = `Item ${index + 1}`;
             }
         });
     }
