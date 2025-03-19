@@ -285,7 +285,8 @@ export class Player extends Phaser.GameObjects.Sprite {
 
     updateInventory() {
         const slots = document.querySelectorAll('.inventory-slot');
-
+    
+        // On efface juste le contenu interne de chaque slot (mais on garde la div)
         slots.forEach((slot, index) => {
 
             if (this.inventory[index]) {
@@ -303,7 +304,6 @@ export class Player extends Phaser.GameObjects.Sprite {
                 slot.innerText = `Item ${index + 1}`;
             }
         });
-    }
-    
+    }    
 
 }
