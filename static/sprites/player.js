@@ -262,9 +262,9 @@ export class Player extends Phaser.GameObjects.Sprite {
             }
         }
 
-        if (Phaser.Input.Keyboard.JustDown(this.keyD)) {
-            console.log('Action avec D réalisée !');
-            const item = this.tasks.dropItem(this);
+        const item = this.tasks.dropItem(this);
+        if (item) {
+            console.log('Action déposer un objet réalisée !');
             this.actions.dropItem(item);
         }
 
@@ -304,6 +304,6 @@ export class Player extends Phaser.GameObjects.Sprite {
                 slot.innerText = `Item ${index + 1}`;
             }
         });
-    }    
+    } 
 
 }
