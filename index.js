@@ -275,6 +275,20 @@ app.post('/room', async function (req, res){
 
 })
 
+//Utiliser no traitre avec PARCIMONIE !!!!!!
+//Sinon juste ça crash ??
+function get_alive_players(room_id, no_traitre=false){
+  let p_count = 0
+  Object.keys(players).forEach(id => {
+    if(connected_players[id].room_id != room_id) return;
+    if(!players[id].alive) return;
+    if(no_traitre && players[id].role != "Survivant") return;
+    p_count++;
+  })
+
+  return p_count;
+}
+
 //Ici on met socketId : token je pense (ou l'inverse en fonction des besoins)
 connected_players = {}
 old_players = {}
@@ -321,12 +335,14 @@ app.post("/connect_to_game", async (req,res) => {
       players[socketId].y = old_players[other_id].y
       players[socketId].tasks = old_players[other_id].tasks
       players[socketId].role = old_players[other_id].role
+      players[socketId].alive = old_players[other_id].alive
     }
     else if (players[other_id]) {
       players[socketId].x = players[other_id].x
       players[socketId].y = players[other_id].y
       players[socketId].tasks = players[other_id].tasks
       players[socketId].role = players[other_id].role
+      players[socketId].alive = players[other_id].alive
       delete players[other_id] //A voir si ça supprime le ref vers tasks, j'espère pas
     }
     if(votes[other_id]) votes[socketId] = votes[other_id]
@@ -338,7 +354,8 @@ app.post("/connect_to_game", async (req,res) => {
       started : game_started[room_id],
       tasks : players[socketId].tasks,
       pos : { x : players[socketId].x, y : players[socketId].y},
-      role : players[socketId].role
+      role : players[socketId].role,
+      alive : players[socketId].alive
     })
     return;
   }
@@ -350,19 +367,16 @@ app.post("/connect_to_game", async (req,res) => {
     tasks : null,
     started : null,
     pos : { x : players[socketId].x, y : players[socketId].y},
-    role : players[socketId].role
+    role : players[socketId].role,
+    alive : true
   })
   connected_players[socketId].token = req.cookies.token;
 
   //Ici on va mettre la logique de début de partie
-  console.log("Un joueur a rejoint : 1")
-  let p_count = 0
-  Object.keys(players).forEach(id => {
-    if(connected_players[id].room_id != room_id) return;
-    p_count++;
-  })
-  console.log("Un joueur a rejoint : " + p_count)
-  //On va dire qu'on doit être 4 ?
+  let p_count = get_alive_players(room_id);
+  console.log("Un joueur a rejoint on est : " + p_count)
+  //On va dire qu'on doit être 4 ? 
+  //Finalement j'ai mis le truc générique
   if(p_count == rooms[room_id].nb_players){
     g_broadcast("Tous les joueurs sont là, la partie va commencer", room_id)
     launch_game(room_id).then(r => console.log("partie finie gg"))
@@ -474,12 +488,12 @@ const tasks = {
     },
     {
       name : EQUIP_BUCKET,
-      item_type : "bucket",
+      item_type : "seau",
       qte : 1
     },
     {
       name : FILL_BUCKET,
-      item_type : "bucket",
+      item_type : "seau_plein",
       qte : 1
     },
   ],
@@ -495,8 +509,8 @@ const tasks = {
       qte : 3
     },
     {
-      name : T_EQUIP_GUN,
-      item_type : "gun",
+      name : T_EQUIP_KNIFE,
+      item_type : "knife",
       qte : 1
     },
   ]
@@ -529,6 +543,27 @@ const g_broadcast = (msg,room_id) =>
     message : msg
   })
 
+function end_game(room_id, ending=0){
+  g_broadcast("La partie est finie", room_id);
+  let side = "Traître"
+  if(ending == 0){
+    g_broadcast("Vous avez survécu 3 jours, félicitations", room_id)
+    side = "Survivant"
+  }
+  else if (ending == 1){
+    g_broadcast("Le traître a réussi à vous retenir suffisamment longtemps, le kraken vous englouti", room_id)
+  }
+  else if (ending == 2){
+    g_broadcast("L'un de vous n'a pas fait ses tâches, vous ne parvenez pas à subsister et la faim vous emporte", room_id)
+  }
+
+  io.to(room_id+"/game").emit('game',{
+    type: 'end_game',
+    type : side
+  })
+  rooms[room_id].game_started = false;
+}
+
 async function launch_game(room_id){
   await sleep(1000)
   g_broadcast("La partie va commencer", room_id)
@@ -540,7 +575,12 @@ async function launch_game(room_id){
   if(rooms[room_id].gamemode == "Sandbox") return;
   //Déroulement du début de la partie
   //On assigne les rôles, ça s'arrête là un peu
-  let roles = ["Traître", "Survivant", "Survivant", "Survivant"]
+  //Faut faire en fonction du nb de joueurs, on met 1 traître le reste de générique
+  let roles = ["Traître"];
+  for(let i = 1; i < rooms[room_id].nb_players; i++){
+    roles.push("Survivant")
+  }
+  //let roles = ["Traître", "Survivant", "Survivant", "Survivant"]
   shuffle(roles)
   let cur_idx = 0;
 
@@ -560,7 +600,8 @@ async function launch_game(room_id){
     console.log("On file le rôle " + role + " à " + socketId)
   })
 
-  for(let nb_jours = 1; nb_jours <= 5; nb_jours++){
+  //3 jours, comme ça c'est une partie de 3/4 min
+  for(let nb_jours = 1; nb_jours <= 3; nb_jours++){
     //Déroulement de l'orga d'un jour :
     //On dit à tout le monde que c'est le jour
     io.to(room_id+"/game").emit('game',{
@@ -568,8 +609,8 @@ async function launch_game(room_id){
       cur_day : nb_jours,
       time : 'day'
     })
-    //On donne les tâches
 
+    //On donne les tâches
     shuffle(tasks.castaways)
     shuffle(tasks.traitors)
     let cur_c = 0;
@@ -581,12 +622,14 @@ async function launch_game(room_id){
       Object.values(players[socketId].tasks).forEach(val => players[socketId].previousTasks.push(val))
       players[socketId].tasks = []
       if(role == "Traître"){
+        //C'est un traître on lui donne qu'un truc à faire
         players[socketId].tasks = [{
             ...structuredClone(tasks.traitors[0]),
             completed : false
           }]
         }
       else {
+        //Le survivant a 2 tâches pour le jour, à voir si on change c'est déjà pas mal ?
         for(let _ = 0; _ < 2; _++){
           players[socketId].tasks.push({
             ...structuredClone(tasks.castaways[cur_c]),
@@ -603,7 +646,17 @@ async function launch_game(room_id){
     })
 
     //Ici on met le sleep, 3 minutes par exemple
-    await sleep(1000 * 60 * 3)
+    //On va itérer toutes les secondes pour voir si tlm est mort (dans ce cas RIP)
+    //Aussi on va faire en sorte que ça dure ~~ 60 secondes voire plus court
+    let nb_iters = 0;
+    while(nb_iters < 60){
+      if(get_alive_players(room_id, true) == 1){
+        end_game(room_id, 1)
+        return;
+      }
+      await sleep(1000);
+    }
+    //await sleep(1000 * 60 * 3)
 
     //Orga de la nuit
     //On dit à tlm que c'est la nuit
@@ -614,6 +667,24 @@ async function launch_game(room_id){
       cur_night : nb_jours,
       time : 'night'
     })
+
+    //Est-ce que les joueurs n'ont pas fait leurs tâches ?
+    //Si oui alors c perdu ! (p-ê un peu sévère ?)
+    //Sauf le traître il a un passe droit
+    let found_one = false;
+    Object.keys(players).forEach(id => {
+      if(connected_players[id].room_id != room_id) return;
+      if(!players[id].alive) return;
+
+      Object.values(players[id].tasks).forEach(val => {
+        if(!val.completed) found_one = true;
+      })
+    })
+    if(found_one){
+      end_game(room_id, 2)
+      return;
+    }
+
     //On reset les votes
     //On met chez players que personne n'a voté, pour vérif dans websocket ensuite
     Object.keys(players).forEach(socketId => {
@@ -623,7 +694,7 @@ async function launch_game(room_id){
     })
 
     //On met le sleep pour laisser les gens voter
-    //await sleep(1000*60*0.5) //30s par ex
+    await sleep(1000*60*0.5) //30s par ex
 
     //On récup le max dans votes
     let player_id = -1;
@@ -655,8 +726,15 @@ async function launch_game(room_id){
       })
     }
 
+    //Vous avez éliminé tous les survivants sauf un ? Fini !! (p-ê mettre 0 ?)
+    if(get_alive_players(room_id, true) == 1){
+      end_game(room_id,1)
+    }
 
   }
+
+  //Fin de la partie les gens viennent vous sauver
+  end_game(room_id, 0);
 
 }
 
@@ -673,6 +751,7 @@ io.on('connection', (socket) => {
         x: Math.floor(Math.random() * 800),
         y: Math.floor(Math.random() * 600),
         direction: 'down',
+        alive : true
     };
 
     if(!connected_players[socket.id]) connected_players[socket.id] = {}
@@ -687,180 +766,233 @@ io.on('connection', (socket) => {
     
 
 
-    socket.on('mouvement', (data) => {
-      if(!data.player) return;
-      if(!connected_players[data.player]) return;
-      if(!connected_players[data.player].room_id) return;
-      if(!game_started[connected_players[data.player].room_id]) return;
-      if(players[socket.id]) {
-        //On regarde si le temps parcouru est cohérent
-        c_time = Date.now()
-        player = players[socket.id]
-        d_parcourue = distance(player.x,player.y, data.x,data.y)
-        if(c_time - player.time_last_mvt < 10) return;
-        //console.log(c_time - player.time_last_mvt)
-        if(d_parcourue/(c_time - player.time_last_mvt)*1000 > 1000){
-          console.log(socket.id + " violation vitesse de déplacement " + d_parcourue/(c_time - player.time_last_mvt) + "px/s")
-          return;
-        }
+  socket.on('mouvement', (data) => {
+    if(!data.player) return;
+    if(!connected_players[data.player]) return;
+    if(!connected_players[data.player].room_id) return;
+    if(!game_started[connected_players[data.player].room_id]) return;
+    if(players[socket.id]) {
+      //Vivant ?
+      if(!players[socket.id].alive) return;
+      //On regarde si le temps parcouru est cohérent
+      c_time = Date.now()
+      player = players[socket.id]
+      d_parcourue = distance(player.x,player.y, data.x,data.y)
+      if(c_time - player.time_last_mvt < 10) return;
+      //console.log(c_time - player.time_last_mvt)
+      if(d_parcourue/(c_time - player.time_last_mvt)*1000 > 1000){
+        console.log(socket.id + " violation vitesse de déplacement " + d_parcourue/(c_time - player.time_last_mvt) + "px/s")
+        return;
       }
-        players[socket.id].time_last_mvt = Date.now()
-        players[socket.id].x = data.x
-        players[socket.id].y = data.y
-        players[socket.id].direction = data.direction
-        //console.log(data);
-        let r_players = {};
-        Object.keys(players).forEach(id => {
-          if(connected_players[id].room_id != connected_players[socket.id].room_id) return;
-          r_players[id] = players[id]
-        }) 
-        io.to(connected_players[socket.id].room_id+"/game").emit('positions', r_players);
-    });
-    socket.on('open_chest', (data) => {
-      if(!data.player) return;
-      if(!connected_players[data.player]) return;
-      if(!connected_players[data.player].room_id) return;
-      if(!game_started[connected_players[data.player].room_id]) return;
-      if(!map[data.item_id]) return;
-      //On peut mettre un check en disant qu'il peut être ouvert qu'une fois
-      //En fait on doit le faire, mais j'ai trop la flemme
-      if(!connected_players[data.player].inventory) connected_players[data.player].inventory = []
-      connected_players[data.player].inventory.push(data.item_type)
-    })
-    socket.on('action', (data) => {
-      if(!data.player) return;
-      if(!connected_players[data.player]) return;
-      if(!connected_players[data.player].room_id) return;
-      if(!game_started[connected_players[data.player].room_id]) return;
-        /*
-        Format de data : un dico avec quelques clés dont 1 systématique "type"
-        type : berryBushPickUp -> un joueur a récup un berry bush, les clés sont alors 
-        - player : le joueur qui l'a fait
-        - item_type : le type d'item (un bush ? des planches ? autre chose ?)
-        -item_id : l'id de l'item dans le jeu
-         (- delete : un booléen pour savoir si le bush doit être suppr ?)
-        */
-        if(!data.type) return;
-        if(data.type == "vote") {
-          if(!players[data.player]) return;
-          if(players[data.player].hasVoted) return;
-          if(!data.vote) return;
-          if(!votes[data.vote]) 
-            votes[data.vote] = 1;
-          else
-            votes[data.vote] += 1;
-          players[data.player].hasVoted = true;
-        }
-        if(data.type == "dropItem"){
-          if(!connected_players[data.player].inventory) return;
-          
-          let item_id = -1;
-          Object.keys(connected_players[data.player].inventory).forEach(i => {
-            if(connected_players[data.player].inventory[i] == data.item_type) {
-              //On peut jeter
-              item_id = i;
-            }
+    }
+    players[socket.id].time_last_mvt = Date.now()
+    players[socket.id].x = data.x
+    players[socket.id].y = data.y
+    players[socket.id].direction = data.direction
+    //console.log(data);
+    let r_players = {};
+    Object.keys(players).forEach(id => {
+      if(connected_players[id].room_id != connected_players[socket.id].room_id) return;
+      if(!players[socket.id].alive) return;
+      r_players[id] = players[id]
+    }) 
+    io.to(connected_players[socket.id].room_id+"/game").emit('positions', r_players);
+  });
+  socket.on('open_chest', (data) => {
+    if(!data.player) return;
+    if(!connected_players[data.player]) return;
+    if(!connected_players[data.player].room_id) return;
+    if(!game_started[connected_players[data.player].room_id]) return;
+    if(!map[data.item_id]) return;
+    if(!players[data.player]) return;
+    if(!players[data.player].alive) return;
+    //On peut mettre un check en disant qu'il peut être ouvert qu'une fois
+    //En fait on doit le faire, mais j'ai trop la flemme
+    if(!connected_players[data.player].inventory) connected_players[data.player].inventory = []
+    connected_players[data.player].inventory.push(data.item_type)
+    //On se dit qu'on récup 1 objet et qu'on récup que des objets de tâches à qte 1
+    //Ce qui est le cas
+    if(players[data.player].task)
+      Object.values(players[data.player].tasks).forEach(val => {
+        if(val.item_type == data.item_type && !val.completed){
+          val.qte--;
+          //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
+          socket.emit('game',{
+            type : "completed_task",
+            name : val.name
           })
-          if(item_id == -1) return;
-          //On regarde si on complète une task avec
-          if(players[data.player].task)
-            Object.values(players[data.player].tasks).forEach(val => {
-              if(val.name == T_THROW_RES && !val.completed){
-                val.qte--;
-                if(val.qte == 0){ 
-                  val.completed = true
-                  socket.emit('game',{
-                    type : 'completed_task',
-                    name : val.name
-                  })
-                }
-              }
-            })
-          //Et ciaooo
-          connected_players[data.player].inventory.splice(item_id, 1);
-
-        }
-        if(data.type == "pickUp") {
-          console.log(data.item_type, data.item_id, map[data.item_id])
-          if (!map[data.item_id]) return;
-          if (!map[data.item_id].capacity) return;
-          if (map[data.item_id].capacity == 0) return;
-          if (!players[data.player]) return;
-
-          let px = players[data.player].x
-          let py = players[data.player].y
-          let ix, iy = get_pos(map[data.item_id]) 
-          if (distance(px,py,ix,iy) > 100) return; //il est trop loin pour le faire
-          //console.log("ahouuuu")
-          //On regarde si le joueur a une tâche à faire en rapport avec l'objet récup
-          if(players[data.player].task)
-            Object.values(players[data.player].tasks).forEach(val => {
-              if(val.item_type == data.item_type && !val.completed){
-                if(data.item_type == "wood")
-                  val.qte-=4;
-                else val.qte -= 5;
-                if(val.qte == 0){
-                  //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
-                  socket.emit('game',{
-                    type : "completed_task",
-                    name : val.name
-                  })
-                  val.completed = true;
-                }
-              }
-            })
-
-          //On l'ajoute à l'inventaire
-          if(!connected_players[data.player].inventory) connected_players[data.player].inventory = []
-          let nb_add = 5;
-          if(data.item_type == "wood")
-            nb_add = 4;
-          for(let i = 0; i < nb_add; i++)
-            connected_players[data.player].inventory.push(data.item_type)
-          console.log(connected_players[data.player].inventory)
-          if(data.item_type == "wood")
-            map[data.item_id].capacity-=4;
-          else 
-            map[data.item_id].capacity-=5;
-          io.to(connected_players[socket.id].room_id).emit('action', data)
-          if(map[data.item_id].capacity == 0){
-            io.to(connected_players[socket.id].room_id).emit('remove', {
-              item_id : data.item_id
-            })
-          }
+          val.completed = true;
         }
       })
+  })
+  socket.on('action', (data) => {
+    if(!data.player) return;
+    if(!connected_players[data.player]) return;
+    if(!connected_players[data.player].room_id) return;
+    if(!game_started[connected_players[data.player].room_id]) return;
+    if(!players[data.player]) return;
+    if(!players[data.player].alive) return;
+    /*
+    Format de data : un dico avec quelques clés dont 1 systématique "type"
+    type : berryBushPickUp -> un joueur a récup un berry bush, les clés sont alors 
+    - player : le joueur qui l'a fait
+    - item_type : le type d'item (un bush ? des planches ? autre chose ?)
+    -item_id : l'id de l'item dans le jeu
+      (- delete : un booléen pour savoir si le bush doit être suppr ?)
+    */
+    if(!data.type) return;
+    if(data.type == "vote") {
+      if(players[data.player].hasVoted) return;
+      if(!data.vote) return;
+      if(!votes[data.vote]) 
+        votes[data.vote] = 1;
+      else
+        votes[data.vote] += 1;
+      players[data.player].hasVoted = true;
+    }
+    if(data.type == "kill"){
+      if(!data.victim) return;
+      if(!connected_players[socket.id]) return;
+      players[data.player].alive = false;
+      io.to(connected_players[socket.id].room_id + "/game").emit('game', {
+        type : "remove_player",
+        id : data.victim
+      })
+
+    }
+    if(data.type == "fill_bucket"){
+      let bucket_id = -1;
+      Object.keys(connected_players[data.player].inventory).forEach(i => {
+        if(connected_players[data.player].inventory[i] == "seau")
+          bucket_id = i;
+      })
+      connected_players[data.player].inventory.splice(bucket_id, 1);
+      connected_players[data.player].inventory.push("seau_plein");
+      //On regarde si il devait fill un bucket
+      if(players[data.player].task)
+        Object.values(players[data.player].tasks).forEach(val => {
+          if(val.item_type == "seau_plein" && !val.completed){
+            val.qte--;
+            //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
+            socket.emit('game',{
+              type : "completed_task",
+              name : val.name
+            })
+            val.completed = true;
+          }
+        })
+    }
+    if(data.type == "dropItem"){
+      if(!connected_players[data.player].inventory) return;
+      
+      let item_id = -1;
+      Object.keys(connected_players[data.player].inventory).forEach(i => {
+        if(connected_players[data.player].inventory[i] == data.item_type) {
+          //On peut jeter
+          item_id = i;
+        }
+      })
+      if(item_id == -1) return;
+      //On regarde si on complète une task avec
+      if(players[data.player].task)
+        Object.values(players[data.player].tasks).forEach(val => {
+          if(val.name == T_THROW_RES && !val.completed){
+            val.qte--;
+            if(val.qte == 0){ 
+              val.completed = true
+              socket.emit('game',{
+                type : 'completed_task',
+                name : val.name
+              })
+            }
+          }
+        })
+      //Et ciaooo
+      connected_players[data.player].inventory.splice(item_id, 1);
+
+    }
+    if(data.type == "pickUp") {
+      console.log(data.item_type, data.item_id, map[data.item_id])
+      if (!map[data.item_id]) return;
+      if (!map[data.item_id].capacity) return;
+      if (map[data.item_id].capacity == 0) return;
+      if (!players[data.player]) return;
+
+      let px = players[data.player].x
+      let py = players[data.player].y
+      let ix, iy = get_pos(map[data.item_id]) 
+      if (distance(px,py,ix,iy) > 100) return; //il est trop loin pour le faire
+      //console.log("ahouuuu")
+      //On regarde si le joueur a une tâche à faire en rapport avec l'objet récup
+      if(players[data.player].task)
+        Object.values(players[data.player].tasks).forEach(val => {
+          if(val.item_type == data.item_type && !val.completed){
+            if(data.item_type == "wood")
+              val.qte-=4;
+            else val.qte -= 5;
+            if(val.qte == 0){
+              //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
+              socket.emit('game',{
+                type : "completed_task",
+                name : val.name
+              })
+              val.completed = true;
+            }
+          }
+        })
+
+      //On l'ajoute à l'inventaire
+      if(!connected_players[data.player].inventory) connected_players[data.player].inventory = []
+      let nb_add = 5;
+      if(data.item_type == "wood")
+        nb_add = 4;
+      for(let i = 0; i < nb_add; i++)
+        connected_players[data.player].inventory.push(data.item_type)
+      console.log(connected_players[data.player].inventory)
+      if(data.item_type == "wood")
+        map[data.item_id].capacity-=4;
+      else 
+        map[data.item_id].capacity-=5;
+      io.to(connected_players[socket.id].room_id).emit('action', data)
+      if(map[data.item_id].capacity == 0){
+        io.to(connected_players[socket.id].room_id + "/game").emit('remove', {
+          item_id : data.item_id
+        })
+      }
+    }
+  })
   //Gestion de chat 
   socket.on("chat-message", (data) => {
-            console.log(`Message reçu de ${data.player}: ${data.message}`);
-            io.to(connected_players[socket.id].room_id).emit("chat-message", data); // Envoie le message à tous les joueurs
-        });
+      console.log(`Message reçu de ${data.player}: ${data.message}`);
+      io.to(connected_players[socket.id].room_id).emit("chat-message", data); // Envoie le message à tous les joueurs
+  });
 
-    // Gérer la déconnexion
-    socket.on('disconnect', () => {
-        console.log(`Joueur déconnecté : ${socket.id}`);
-        old_players[socket.id] = structuredClone(players[socket.id])
-        delete players[socket.id];
-        delete socketId_socket[socket.id];
+  socket.on('disconnect', () => {
+      console.log(`Joueur déconnecté : ${socket.id}`);
+      //Le joueur est parti, on va le garder dans old_players si jamais il se reco
+      //Mais on le dégage
+      old_players[socket.id] = structuredClone(players[socket.id])
+      delete players[socket.id];
+      delete socketId_socket[socket.id];
 
-
-        Object.keys(rooms).forEach(room_id => {
-          let room = rooms[room_id]
-          if(room.launched) return;
-          let id = -1;
-          Object.keys(room.players).forEach(c_id => {
-            if(room.players[c_id].socketId == socket.id)
-              id = c_id;
-          })
-          if(id != -1){
-            rooms[room_id].players.splice(id,1);
-          }
-          let room_players = [];
-          Object.values(rooms[room_id].players).forEach(val => {
-            room_players.push(val.player);
-          })
-          io.to(room_id+"/lobby").emit("players", room_players)
+      //Accessoirement on l'enlève des rooms QUE si la partie n'a pas commencée
+      Object.keys(rooms).forEach(room_id => {
+        let room = rooms[room_id]
+        if(room.launched) return;
+        let id = -1;
+        Object.keys(room.players).forEach(c_id => {
+          if(room.players[c_id].socketId == socket.id)
+            id = c_id;
         })
+        if(id != -1){
+          rooms[room_id].players.splice(id,1);
+        }
+        let room_players = [];
+        Object.values(rooms[room_id].players).forEach(val => {
+          room_players.push(val.player);
+        })
+        io.to(room_id+"/lobby").emit("players", room_players)
+      })
 
         //delete connected_players[socket.id];
         //io.emit('positions', players); // Mettre à jour la liste pour tous

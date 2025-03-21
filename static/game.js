@@ -2,7 +2,6 @@ import { BerryBush } from "./sprites/berry_bush.js"
 import { OakPlanks } from "./sprites/oak_planks.js"
 import { Chest } from "./sprites/chest.js"
 import { Player } from './sprites/player.js'
-import { WaterWell } from "./sprites/waterWell.js"
 
 var config = {
     type: Phaser.AUTO,
@@ -55,6 +54,7 @@ var game = new Phaser.Game(config)
     // On init le joueur avant tout
     this.player = new Player(this, 500,500, true, "impostor")
     player = this.player;
+
     
     this.map = this.add.tilemap('map')
     const map = this.map
@@ -90,12 +90,6 @@ var game = new Phaser.Game(config)
     let topLeftChests = chests.filter(tile => {
       return tile.properties.numero == 1;
     });
-    let waterWells = this.mapElements.filterTiles(tile => {
-      return tile.properties && tile.properties.name == "waterWell";
-    });
-    let topLeftWaterWells = waterWells.filter(tile => {
-      return tile.properties.numero == 1;
-    });
 
 ////////////OBJETS COLLISIONS////////////
     this.elements = [] //Ici tous les éléments avec lesquels on peut intéragir
@@ -128,17 +122,6 @@ var game = new Phaser.Game(config)
       });
       this.add.existing(chest)
     }
-
-    for(let waterWell_i in topLeftWaterWells) {
-      let waterWell = new WaterWell(this, waterWells[waterWell_i].pixelX + 32, waterWells[waterWell_i].pixelY + 32 , waterWells[waterWell_i].y + "/" + waterWells[waterWell_i].x, waterWells[waterWell_i])
-      this.elements.push(waterWell)
-        
-      this.physics.add.collider(this.player, waterWell, function() {
-        console.log('Collision avec waterWell !');
-      });
-      this.add.existing(waterWell)
-    }
-
 
 
     this.cameras.main.startFollow(this.player, true);
@@ -183,7 +166,14 @@ var game = new Phaser.Game(config)
             elem.isNowDepleted();
           })
         })
-
+      }
+      if(data.type == "remove_player"){
+        if(!data.id) return;
+        console.log("Faut remove le joueur " + data.id, "après je crois c déjà fait")
+        //On met le mode spectateur sur le joueur si il est mort
+        if(data.id != socket.id) return;
+        this.player.ghost = true;
+        this.player.tint = 0xF8F7ED
       }
       if(data.type == "broadcast") {
         console.log("On a reçu : " + data.message)
@@ -200,6 +190,24 @@ var game = new Phaser.Game(config)
       }
       if(data.type == "completed_task") {
         console.log("Vous avez complété : " + data.name)
+      }
+      if(data.type == "end_game") {
+        if(side == "Survivant"){
+          const sModal = document.getElementById("sWin");
+          const rButton = document.getElementById("retourIndex1");
+          rButton.addEventListener("click", () => {
+            document.location.href = "/"
+          })
+          sModal.showModal();
+        }
+        else {
+          const tModal = document.getElementById("tWin");
+          const rButton = document.getElementById("retourIndex2");
+          rButton.addEventListener("click", () => {
+            document.location.href = "/"
+          })
+          tModal.showModal();
+        }
       }
       if(data.type == "set_time") {
         console.log("On a reçu des infos sur le temps")
@@ -290,9 +298,9 @@ var game = new Phaser.Game(config)
 
     this.player.onAction('openChest', (chest_id) => {
       const items = [
-        { type: 'sceau', id: '1' },
-        { type: 'sceau', id: '2' },
-        { type: 'sceau', id: '3' }
+        { type: 'seau', id: '1' },
+        { type: 'couteau', id: '2' },
+        { type: 'hache', id: '3' }
       ];
       const randomIndex = Math.floor(Math.random() * items.length);
       const item = items[randomIndex];
@@ -311,14 +319,6 @@ var game = new Phaser.Game(config)
       });
       console.log("onAction : openChest");
       console.log(`Le joueur a trouvé ${item.type}`);
-    })
-
-    this.player.onAction('fillBucket', (waterWell_i) => {
-      socket.emit('action', {
-        type : 'fillBucket',
-        player : socket.id
-      })
-      console.log("onAction : fillBucket");
     })
 
 

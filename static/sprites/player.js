@@ -8,6 +8,7 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.scene = scene;
         this.isActive = active;
         this.role = role;
+        this.ghost = false;
         this.inventory = [];
         if (role == "player") {
             this.tasks = getPlayerTasks();
@@ -15,7 +16,6 @@ export class Player extends Phaser.GameObjects.Sprite {
             this.tasks = getImpostorTasks();
             this.tint = 0xFF0000; // Rouge pour différencier l'imposteur
         }
-        this.fillBucket = false;
         scene.physics.add.existing(this);
         
         this.body.setCollideWorldBounds(true)
@@ -176,6 +176,9 @@ export class Player extends Phaser.GameObjects.Sprite {
 
         this.applyMovement();
 
+        //Si il est mort, tout ce qui reste n'est plus à exécuter
+        if(this.ghost) return;
+
         let tileX = Math.floor(this.y / 32)
         let tileY = Math.floor(this.x / 32)
         //console.log(this.scene.layerEau)
@@ -214,7 +217,7 @@ export class Player extends Phaser.GameObjects.Sprite {
         }
         this.last_dir = this.direction
 
-        if (this.canInteract && this.canInteract.type != "chest" && this.canInteract.type != "chestOpened" && this.canInteract.type != "waterWell") {
+        if (this.canInteract && this.canInteract.type != "chest" && this.canInteract.type != "chestOpened") {
             const cur = this.canInteract
             const midX = cur.x //+ 50 //(this.x + berryBush.x) / 3;
             const midY = cur.y + 50 * (this.y+10 > cur.y ? -1 : 1) //this.y //this.y + (this.y + berryBush.y) / 2;
@@ -222,7 +225,8 @@ export class Player extends Phaser.GameObjects.Sprite {
             this.interactionIndicator.z = 1;
             this.interactionIndicator.visible = true;
             //console.log(this.interactionIndicator)
-        } else if (this.canInteract && (this.canInteract.type == "chest" || this.canInteract.type == "waterWell")) {
+        } else if (this.canInteract && this.canInteract.type == "chest") {
+            console.log("interaction avec chest")
             const cur = this.canInteract
             const midX = cur.x //+ 50 //(this.x + berryBush.x) / 3;
             const midY = cur.y + 50 * (this.y+10 > cur.y ? -1 : 1) //this.y //this.y + (this.y + berryBush.y) / 2;
@@ -260,12 +264,6 @@ export class Player extends Phaser.GameObjects.Sprite {
             if (this.canInteract.type == "chestOpened") {
                 console.log("Le coffre a déjà été ouvert !")
             }
-            if (this.canInteract.type == "waterWell" && this.inventory.includes("sceau")){
-                if (this.actions.openChest) {
-                    this.actions.fillBucket(this.canInteract.id);
-                    this.tasks.fillBucket(this);
-                }
-            }
         }
 
         const item = this.tasks.dropItem(this);
@@ -294,18 +292,14 @@ export class Player extends Phaser.GameObjects.Sprite {
     
         // On efface juste le contenu interne de chaque slot (mais on garde la div)
         slots.forEach((slot, index) => {
-            slot.innerHTML = ''; // On efface le contenu du slot
-            slot.style.backgroundColor = '';
 
             if (this.inventory[index]) {
+                slot.innerHTML = ''; // On efface le contenu du slot
+
                 const img = document.createElement('img');
                 img.src = `/static/tilemaps/${this.inventory[index]}.png`;
                 img.alt = this.inventory[index];
                 img.classList.add('inventory-item');
-
-                if (this.inventory[index] == "sceau" && this.fillBucket == true) {
-                    slot.style.backgroundColor = 'rgb(64, 192, 218)';
-                }
             
                 slot.appendChild(img); 
             } else {
