@@ -170,6 +170,10 @@ var game = new Phaser.Game(config)
       if(data.type == "remove_player"){
         if(!data.id) return;
         console.log("Faut remove le joueur " + data.id, "après je crois c déjà fait")
+        //On met le mode spectateur sur le joueur si il est mort
+        if(data.id != socket.id) return;
+        this.player.ghost = true;
+        this.player.tint = 0xF8F7ED
       }
       if(data.type == "broadcast") {
         console.log("On a reçu : " + data.message)

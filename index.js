@@ -771,6 +771,8 @@ io.on('connection', (socket) => {
     if(!connected_players[data.player].room_id) return;
     if(!game_started[connected_players[data.player].room_id]) return;
     if(players[socket.id]) {
+      //Vivant ?
+      if(!players[socket.id].alive) return;
       //On regarde si le temps parcouru est cohérent
       c_time = Date.now()
       player = players[socket.id]
@@ -801,6 +803,8 @@ io.on('connection', (socket) => {
     if(!connected_players[data.player].room_id) return;
     if(!game_started[connected_players[data.player].room_id]) return;
     if(!map[data.item_id]) return;
+    if(!players[data.player]) return;
+    if(!players[data.player].alive) return;
     //On peut mettre un check en disant qu'il peut être ouvert qu'une fois
     //En fait on doit le faire, mais j'ai trop la flemme
     if(!connected_players[data.player].inventory) connected_players[data.player].inventory = []
@@ -825,6 +829,8 @@ io.on('connection', (socket) => {
     if(!connected_players[data.player]) return;
     if(!connected_players[data.player].room_id) return;
     if(!game_started[connected_players[data.player].room_id]) return;
+    if(!players[data.player]) return;
+    if(!players[data.player].alive) return;
     /*
     Format de data : un dico avec quelques clés dont 1 systématique "type"
     type : berryBushPickUp -> un joueur a récup un berry bush, les clés sont alors 
@@ -835,7 +841,6 @@ io.on('connection', (socket) => {
     */
     if(!data.type) return;
     if(data.type == "vote") {
-      if(!players[data.player]) return;
       if(players[data.player].hasVoted) return;
       if(!data.vote) return;
       if(!votes[data.vote]) 
@@ -845,7 +850,6 @@ io.on('connection', (socket) => {
       players[data.player].hasVoted = true;
     }
     if(data.type == "kill"){
-      if(!players[data.player]) return;
       if(!data.victim) return;
       if(!connected_players[socket.id]) return;
       players[data.player].alive = false;
@@ -856,7 +860,6 @@ io.on('connection', (socket) => {
 
     }
     if(data.type == "fill_bucket"){
-      if(!players[data.player]) return;
       let bucket_id = -1;
       Object.keys(connected_players[data.player].inventory).forEach(i => {
         if(connected_players[data.player].inventory[i] == "seau")
@@ -959,35 +962,36 @@ io.on('connection', (socket) => {
   })
   //Gestion de chat 
   socket.on("chat-message", (data) => {
-            console.log(`Message reçu de ${data.player}: ${data.message}`);
-            io.to(connected_players[socket.id].room_id).emit("chat-message", data); // Envoie le message à tous les joueurs
-        });
+      console.log(`Message reçu de ${data.player}: ${data.message}`);
+      io.to(connected_players[socket.id].room_id).emit("chat-message", data); // Envoie le message à tous les joueurs
+  });
 
-    // Gérer la déconnexion
-    socket.on('disconnect', () => {
-        console.log(`Joueur déconnecté : ${socket.id}`);
-        old_players[socket.id] = structuredClone(players[socket.id])
-        delete players[socket.id];
-        delete socketId_socket[socket.id];
+  socket.on('disconnect', () => {
+      console.log(`Joueur déconnecté : ${socket.id}`);
+      //Le joueur est parti, on va le garder dans old_players si jamais il se reco
+      //Mais on le dégage
+      old_players[socket.id] = structuredClone(players[socket.id])
+      delete players[socket.id];
+      delete socketId_socket[socket.id];
 
-
-        Object.keys(rooms).forEach(room_id => {
-          let room = rooms[room_id]
-          if(room.launched) return;
-          let id = -1;
-          Object.keys(room.players).forEach(c_id => {
-            if(room.players[c_id].socketId == socket.id)
-              id = c_id;
-          })
-          if(id != -1){
-            rooms[room_id].players.splice(id,1);
-          }
-          let room_players = [];
-          Object.values(rooms[room_id].players).forEach(val => {
-            room_players.push(val.player);
-          })
-          io.to(room_id+"/lobby").emit("players", room_players)
+      //Accessoirement on l'enlève des rooms QUE si la partie n'a pas commencée
+      Object.keys(rooms).forEach(room_id => {
+        let room = rooms[room_id]
+        if(room.launched) return;
+        let id = -1;
+        Object.keys(room.players).forEach(c_id => {
+          if(room.players[c_id].socketId == socket.id)
+            id = c_id;
         })
+        if(id != -1){
+          rooms[room_id].players.splice(id,1);
+        }
+        let room_players = [];
+        Object.values(rooms[room_id].players).forEach(val => {
+          room_players.push(val.player);
+        })
+        io.to(room_id+"/lobby").emit("players", room_players)
+      })
 
         //delete connected_players[socket.id];
         //io.emit('positions', players); // Mettre à jour la liste pour tous

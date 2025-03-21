@@ -8,6 +8,7 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.scene = scene;
         this.isActive = active;
         this.role = role;
+        this.ghost = false;
         this.inventory = [];
         if (role == "player") {
             this.tasks = getPlayerTasks();
@@ -174,6 +175,9 @@ export class Player extends Phaser.GameObjects.Sprite {
         }
 
         this.applyMovement();
+
+        //Si il est mort, tout ce qui reste n'est plus à exécuter
+        if(this.ghost) return;
 
         let tileX = Math.floor(this.y / 32)
         let tileY = Math.floor(this.x / 32)
