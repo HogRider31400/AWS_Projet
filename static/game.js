@@ -166,7 +166,10 @@ var game = new Phaser.Game(config)
             elem.isNowDepleted();
           })
         })
-
+      }
+      if(data.type == "remove_player"){
+        if(!data.id) return;
+        console.log("Faut remove le joueur " + data.id, "après je crois c déjà fait")
       }
       if(data.type == "broadcast") {
         console.log("On a reçu : " + data.message)
@@ -273,7 +276,7 @@ var game = new Phaser.Game(config)
 
     this.player.onAction('openChest', (chest_id) => {
       const items = [
-        { type: 'sceau', id: '1' },
+        { type: 'seau', id: '1' },
         { type: 'couteau', id: '2' },
         { type: 'hache', id: '3' }
       ];

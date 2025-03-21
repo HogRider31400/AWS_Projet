@@ -488,12 +488,12 @@ const tasks = {
     },
     {
       name : EQUIP_BUCKET,
-      item_type : "bucket",
+      item_type : "seau",
       qte : 1
     },
     {
       name : FILL_BUCKET,
-      item_type : "bucket",
+      item_type : "seau_plein",
       qte : 1
     },
   ],
@@ -509,8 +509,8 @@ const tasks = {
       qte : 3
     },
     {
-      name : T_EQUIP_GUN,
-      item_type : "gun",
+      name : T_EQUIP_KNIFE,
+      item_type : "knife",
       qte : 1
     },
   ]
@@ -782,17 +782,18 @@ io.on('connection', (socket) => {
         return;
       }
     }
-      players[socket.id].time_last_mvt = Date.now()
-      players[socket.id].x = data.x
-      players[socket.id].y = data.y
-      players[socket.id].direction = data.direction
-      //console.log(data);
-      let r_players = {};
-      Object.keys(players).forEach(id => {
-        if(connected_players[id].room_id != connected_players[socket.id].room_id) return;
-        r_players[id] = players[id]
-      }) 
-      io.to(connected_players[socket.id].room_id+"/game").emit('positions', r_players);
+    players[socket.id].time_last_mvt = Date.now()
+    players[socket.id].x = data.x
+    players[socket.id].y = data.y
+    players[socket.id].direction = data.direction
+    //console.log(data);
+    let r_players = {};
+    Object.keys(players).forEach(id => {
+      if(connected_players[id].room_id != connected_players[socket.id].room_id) return;
+      if(!players[socket.id].alive) return;
+      r_players[id] = players[id]
+    }) 
+    io.to(connected_players[socket.id].room_id+"/game").emit('positions', r_players);
   });
   socket.on('open_chest', (data) => {
     if(!data.player) return;
@@ -804,6 +805,20 @@ io.on('connection', (socket) => {
     //En fait on doit le faire, mais j'ai trop la flemme
     if(!connected_players[data.player].inventory) connected_players[data.player].inventory = []
     connected_players[data.player].inventory.push(data.item_type)
+    //On se dit qu'on récup 1 objet et qu'on récup que des objets de tâches à qte 1
+    //Ce qui est le cas
+    if(players[data.player].task)
+      Object.values(players[data.player].tasks).forEach(val => {
+        if(val.item_type == data.item_type && !val.completed){
+          val.qte--;
+          //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
+          socket.emit('game',{
+            type : "completed_task",
+            name : val.name
+          })
+          val.completed = true;
+        }
+      })
   })
   socket.on('action', (data) => {
     if(!data.player) return;
@@ -828,6 +843,40 @@ io.on('connection', (socket) => {
       else
         votes[data.vote] += 1;
       players[data.player].hasVoted = true;
+    }
+    if(data.type == "kill"){
+      if(!players[data.player]) return;
+      if(!data.victim) return;
+      if(!connected_players[socket.id]) return;
+      players[data.player].alive = false;
+      io.to(connected_players[socket.id].room_id + "/game").emit('game', {
+        type : "remove_player",
+        id : data.victim
+      })
+
+    }
+    if(data.type == "fill_bucket"){
+      if(!players[data.player]) return;
+      let bucket_id = -1;
+      Object.keys(connected_players[data.player].inventory).forEach(i => {
+        if(connected_players[data.player].inventory[i] == "seau")
+          bucket_id = i;
+      })
+      connected_players[data.player].inventory.splice(bucket_id, 1);
+      connected_players[data.player].inventory.push("seau_plein");
+      //On regarde si il devait fill un bucket
+      if(players[data.player].task)
+        Object.values(players[data.player].tasks).forEach(val => {
+          if(val.item_type == "seau_plein" && !val.completed){
+            val.qte--;
+            //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
+            socket.emit('game',{
+              type : "completed_task",
+              name : val.name
+            })
+            val.completed = true;
+          }
+        })
     }
     if(data.type == "dropItem"){
       if(!connected_players[data.player].inventory) return;
@@ -888,25 +937,25 @@ io.on('connection', (socket) => {
           }
         })
 
-        //On l'ajoute à l'inventaire
-        if(!connected_players[data.player].inventory) connected_players[data.player].inventory = []
-        let nb_add = 5;
-        if(data.item_type == "wood")
-          nb_add = 4;
-        for(let i = 0; i < nb_add; i++)
-          connected_players[data.player].inventory.push(data.item_type)
-        console.log(connected_players[data.player].inventory)
-        if(data.item_type == "wood")
-          map[data.item_id].capacity-=4;
-        else 
-          map[data.item_id].capacity-=5;
-        io.to(connected_players[socket.id].room_id).emit('action', data)
-        if(map[data.item_id].capacity == 0){
-          io.to(connected_players[socket.id].room_id).emit('remove', {
-            item_id : data.item_id
-          })
-        }
+      //On l'ajoute à l'inventaire
+      if(!connected_players[data.player].inventory) connected_players[data.player].inventory = []
+      let nb_add = 5;
+      if(data.item_type == "wood")
+        nb_add = 4;
+      for(let i = 0; i < nb_add; i++)
+        connected_players[data.player].inventory.push(data.item_type)
+      console.log(connected_players[data.player].inventory)
+      if(data.item_type == "wood")
+        map[data.item_id].capacity-=4;
+      else 
+        map[data.item_id].capacity-=5;
+      io.to(connected_players[socket.id].room_id).emit('action', data)
+      if(map[data.item_id].capacity == 0){
+        io.to(connected_players[socket.id].room_id + "/game").emit('remove', {
+          item_id : data.item_id
+        })
       }
+    }
   })
   //Gestion de chat 
   socket.on("chat-message", (data) => {
