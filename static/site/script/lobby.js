@@ -6,6 +6,18 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     socket.on('players', data => {
       console.log(data)
+
+      let elem = document.getElementById("player-list")
+
+      for(let selem of elem.children)
+        selem.remove()
+
+      for(let pseudo of data){
+        let nelem = document.createElement('li')
+        nelem.innerHTML = pseudo
+        elem.appendChild(nelem)
+      }
+      
     })
 
     socket.on('go_to_game', data => {
@@ -30,52 +42,16 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     const result = await response.json();
     
-    if (roomData) {
-      const modeDisplay = document.createElement('div');
-      modeDisplay.style.position = 'absolute';
-      modeDisplay.style.top = '10px';
-      modeDisplay.style.right = '10px';
-      modeDisplay.style.background = 'rgba(255, 255, 255, 0.8)';
-      modeDisplay.style.padding = '5px 10px';
-      modeDisplay.style.borderRadius = '8px';
-      modeDisplay.innerHTML = `Mode: ${roomData.difficulty} | Joueurs: ${roomData.players}`;
-      document.body.appendChild(modeDisplay);
-      
-      const playersGrid = document.querySelector('.players-grid');
-      playersGrid.innerHTML = ''; 
-      for(let i = 0; i < roomData.players; i++){
-        const cell = document.createElement('div');
-        cell.classList.add('player');
-        cell.dataset.empty = "true";
-        playersGrid.appendChild(cell);
-      }
+    if (result) {
+      document.getElementById("lobby-text-main").innerHTML = "Lobby : " + roomData.room;
+      let elem = document.getElementById("lobby-text-flavor")
+      elem.innerHTML = result.gamemode + " | " + result.nb_players
+      if(result.nb_players == 1)
+        elem.innerHTML += " joueur"
+      else
+        elem.innerHTML += " joueurs"
     }
 
-
-     
-    document.querySelector('.lobby-btn').addEventListener('click', () => {
-      console.log("ptnnn")
-        const roomData = JSON.parse(localStorage.getItem('roomData'));
-        if (roomData) {
-            const playersGrid = document.querySelector('.players-grid');
-            const alreadyJoined = Array.from(playersGrid.children).some(cell => cell.textContent.includes(roomData.pseudo));
-            if (alreadyJoined) {
-                alert("Vous avez déjà rejoint le lobby !");
-                return;
-            }
-            
-            const emptyCell = Array.from(playersGrid.children).find(cell => cell.dataset.empty === "true");
-            if (emptyCell) {
-                emptyCell.innerHTML = `
-                  <img src="${roomData.characterBg}" alt="Character" style="width:100%; height:auto;">
-                  <p style="text-align: center; margin: 5px 0;">${roomData.pseudo}</p>
-                `;
-                emptyCell.dataset.empty = "false";
-            } else {
-                alert("Toutes les cases sont déjà occupées !");
-            }
-        }
-    });
 });         
 
 document.getElementById('launch-button').addEventListener('click', async function (e) {

@@ -3,24 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Choisir votre personnage</title>
+    <title>Choisissez vos options</title>
     <link rel="stylesheet" href="/static/site/css/personnage.css">
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Choisissez votre personnage</h1>
+            <h1>Choisissez vos options</h1>
         </header>
 
         <main>
-            <div class="character-selection">
-                <button class="arrow-button" id="left-arrow">&#9664;</button>
-                <div class="character-display">
-                    <p>Votre personnage</p>
-                    <div class="character-circle" id="character-circle"></div>
-                </div>
-                <button class="arrow-button" id="right-arrow">&#9654;</button>
-            </div>
 
             <form>
                 <div class="form-group1">
@@ -29,17 +21,17 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="difficulty">Difficulté :</label>
-                    <select id="difficulty" name="difficulty">
-                        <option value="easy">Facile</option>
-                        <option value="medium">Moyen</option>
-                        <option value="hard">Difficile</option>
+                    <label for="gamemode">Mode</label>
+                    <select id="gamemode" name="gamemode">
+                        <option value="Classique">Classique</option>
+                        <option value="Sandbox">Sandbox</option>
                     </select>
                 </div>
                 
                 <div class="form-group">
                     <label for="players">Nombre de joueurs :</label>
                     <select id="players" name="players">
+                        <option value="1">1</option>
                         <option value="2">2</option>
                         <option value="3">3</option>
                         <option value="4">4</option>
@@ -48,7 +40,7 @@
                 
                 <div class="button-group">
                     <button type="submit" class="cta-button create-room">Create Room</button>
-                    <button type="button" class="cta-button join-button">Join Room</button>
+                    <button type="submit" class="cta-button join-button">Join Room</button>
                 </div>
                 <div class="form-group">
                     <input type="text" id="room-code" name="room-code" placeholder="Entrez le code de la room">

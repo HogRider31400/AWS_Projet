@@ -8,6 +8,7 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.scene = scene;
         this.isActive = active;
         this.role = role;
+        this.ghost = false;
         this.inventory = [];
         if (role == "player") {
             this.tasks = getPlayerTasks();
@@ -129,7 +130,7 @@ export class Player extends Phaser.GameObjects.Sprite {
     {
         
         super.preUpdate(time, delta);
-        if(!this.scene.game_started) return;
+        //if(!this.scene.game_started) return;
 
         //Update de joueur non actif
         if(this.isActive == false){
@@ -174,6 +175,9 @@ export class Player extends Phaser.GameObjects.Sprite {
         }
 
         this.applyMovement();
+
+        //Si il est mort, tout ce qui reste n'est plus à exécuter
+        if(this.ghost) return;
 
         let tileX = Math.floor(this.y / 32)
         let tileY = Math.floor(this.x / 32)
@@ -262,9 +266,9 @@ export class Player extends Phaser.GameObjects.Sprite {
             }
         }
 
-        if (Phaser.Input.Keyboard.JustDown(this.keyD)) {
-            console.log('Action avec D réalisée !');
-            const item = this.tasks.dropItem(this);
+        const item = this.tasks.dropItem(this);
+        if (item) {
+            console.log('Action déposer un objet réalisée !');
             this.actions.dropItem(item);
         }
 
@@ -288,15 +292,22 @@ export class Player extends Phaser.GameObjects.Sprite {
     
         // On efface juste le contenu interne de chaque slot (mais on garde la div)
         slots.forEach((slot, index) => {
-    
-            // Si un objet existe dans l'inventaire à cet index
+
             if (this.inventory[index]) {
-                slot.innerHTML = ''; // Efface le contenu précédent
-                const text = document.createElement('span');
-                text.innerText = this.inventory[index];
-                slot.appendChild(text);
+                slot.innerHTML = ''; // On efface le contenu du slot
+
+                const img = document.createElement('img');
+                img.src = `/static/tilemaps/${this.inventory[index]}.png`;
+                img.alt = this.inventory[index];
+                img.classList.add('inventory-item');
+            
+                slot.appendChild(img); 
+            } else {
+                slot.innerHTML = ''; // On efface le contenu du slot
+                // Si le slot est vide, afficher "Item X"
+                slot.innerText = `Item ${index + 1}`;
             }
         });
-    }    
+    } 
 
 }

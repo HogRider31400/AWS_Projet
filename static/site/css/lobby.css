@@ -16,7 +16,8 @@ body {
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    text-align: center;
+    color : white;
+    text-align: center; 
     width: 80%;
     max-width: 900px;
 }
@@ -59,4 +60,9 @@ body {
 
 .lobby-btn:hover {
     background: #0056b3;
+}
+
+.lobby-players {
+    margin-left : 30%;
+    text-align: left;
 }
