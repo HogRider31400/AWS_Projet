@@ -316,7 +316,7 @@ var game = new Phaser.Game(config)
 
     this.player.onAction('openChest', (chest_id) => {
       const items = [
-        { type: 'seau', id: '1' },
+        { type: 'sceau', id: '1' },
         { type: 'couteau', id: '2' },
         { type: 'hache', id: '3' }
       ];
