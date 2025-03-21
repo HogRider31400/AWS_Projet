@@ -191,6 +191,24 @@ var game = new Phaser.Game(config)
       if(data.type == "completed_task") {
         console.log("Vous avez complété : " + data.name)
       }
+      if(data.type == "end_game") {
+        if(side == "Survivant"){
+          const sModal = document.getElementById("sWin");
+          const rButton = document.getElementById("retourIndex1");
+          rButton.addEventListener("click", () => {
+            document.location.href = "/"
+          })
+          sModal.showModal();
+        }
+        else {
+          const tModal = document.getElementById("tWin");
+          const rButton = document.getElementById("retourIndex2");
+          rButton.addEventListener("click", () => {
+            document.location.href = "/"
+          })
+          tModal.showModal();
+        }
+      }
       if(data.type == "set_time") {
         console.log("On a reçu des infos sur le temps")
         if(data.time == "day"){

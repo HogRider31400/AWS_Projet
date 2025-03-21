@@ -561,6 +561,7 @@ function end_game(room_id, ending=0){
     type: 'end_game',
     type : side
   })
+  rooms[room_id].game_started = false;
 }
 
 async function launch_game(room_id){
