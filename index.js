@@ -508,11 +508,11 @@ const tasks = {
       item_type : "any",
       qte : 3
     },
-    {
-      name : T_EQUIP_KNIFE,
-      item_type : "knife",
-      qte : 1
-    },
+    // {
+    //   name : T_EQUIP_KNIFE,
+    //   item_type : "knife",
+    //   qte : 1
+    // },
   ]
 };
 

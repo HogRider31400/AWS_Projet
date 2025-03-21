@@ -25,6 +25,7 @@ var config = {
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const socket = await io();
+window.socket = socket;
 await socket.emit('connect_game');
 await sleep(500);
 let playersData = {};
