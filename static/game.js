@@ -227,6 +227,7 @@ var game = new Phaser.Game(config)
 
 
     socket.on('positions', (data) => {
+      window.playersData = data;
       playersData = data;
       //console.log(data);
       updateOtherPlayers(this);
