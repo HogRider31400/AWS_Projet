@@ -9,7 +9,9 @@ export function getPlayerTasks() {
         pickUpBerry,
         pickUpWood,
         dropItem,
-        openChest
+        openChest,
+        fillBucket
+
     };
 }
 
@@ -19,8 +21,8 @@ export function getImpostorTasks() {
         pickUpWood,
         dropItem,
         openChest,
-        throwItem,
-        knife
+        fillBucket,
+        throwItem
     };
 }
 
@@ -115,27 +117,6 @@ export function dropItem(player) {
                             capacity: 4
                         };
                         item = new OakPlanks(player.scene, dropTileX * 32 + 16, dropTileY * 32 + 16, dropTileY + "/" + dropTileX, layer.getTileAt(dropTileX, dropTileY));
-                    } else if (itemToDrop == "sceau") {
-                        const tile = layer.putTileAt(493, dropTileX, dropTileY);
-                        tile.properties = {
-                            name: "sceau",
-                            capacity: 1
-                        };
-                        item = new Sceau(player.scene, dropTileX * 32 + 16, dropTileY * 32 + 16, dropTileY + "/" + dropTileX, layer.getTileAt(dropTileX, dropTileY));
-                    } else if (itemToDrop == "hache") {
-                        const tile = layer.putTileAt(493, dropTileX, dropTileY);
-                        tile.properties = {
-                            name: "hache",
-                            capacity: 1
-                        };
-                        item = new Hache(player.scene, dropTileX * 32 + 16, dropTileY * 32 + 16, dropTileY + "/" + dropTileX, layer.getTileAt(dropTileX, dropTileY));
-                    } else if (itemToDrop == "couteau") {
-                        const tile = layer.putTileAt(493, dropTileX, dropTileY);
-                        tile.properties = {
-                            name: "couteau",
-                            capacity: 1
-                        };
-                        item = new Couteau(player.scene, dropTileX * 32 + 16, dropTileY * 32 + 16, dropTileY + "/" + dropTileX, layer.getTileAt(dropTileX, dropTileY));
                     }
 
                     if (item) {
@@ -186,6 +167,17 @@ export function openChest(player, chest) {
     layer.putTileAt(chestOpenedBottomRight, x, y);
 }
 
+export function fillBucket(player) {
+    console.log("Vous avez rempli le sceau");
+    player.fillBucket = true;
+
+    const bucketIndex = player.inventory.indexOf("sceau");
+    if (bucketIndex !== -1) {
+        const slots = document.querySelectorAll('.inventory-slot');
+        slots[bucketIndex].style.backgroundColor = 'rgb(64, 192, 218)';
+    }
+}
+
 ////ACTIONS DE L'IMPOSTEUR///
 export function throwItem(player) {
     console.log("throwItem")
@@ -197,8 +189,4 @@ export function throwItem(player) {
         console.log(`L'imposteur jette un objet'.`, player.inventory);
         const itemToDrop = player.inventory.pop();
     }
-}
-
-export function knife(player) {
-
 }

@@ -8,14 +8,16 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.scene = scene;
         this.isActive = active;
         this.role = role;
+        this.type = "human";
         this.ghost = false;
         this.inventory = [];
         if (role == "player") {
             this.tasks = getPlayerTasks();
         } else if (role == "impostor") {
             this.tasks = getImpostorTasks();
-            this.tint = 0xFF0000; // Rouge pour différencier l'imposteur
+            //this.tint = 0xFF0000; // Rouge pour différencier l'imposteur
         }
+        this.fillBucket = false;
         scene.physics.add.existing(this);
         
         this.body.setCollideWorldBounds(true)
@@ -217,7 +219,7 @@ export class Player extends Phaser.GameObjects.Sprite {
         }
         this.last_dir = this.direction
 
-        if (this.canInteract && this.canInteract.type != "chest" && this.canInteract.type != "chestOpened") {
+        if (this.canInteract && this.canInteract.type != "chest" && this.canInteract.type != "chestOpened" && this.canInteract.type != "waterWell"  && this.canInteract.type != "human") {
             const cur = this.canInteract
             const midX = cur.x //+ 50 //(this.x + berryBush.x) / 3;
             const midY = cur.y + 50 * (this.y+10 > cur.y ? -1 : 1) //this.y //this.y + (this.y + berryBush.y) / 2;
@@ -225,8 +227,7 @@ export class Player extends Phaser.GameObjects.Sprite {
             this.interactionIndicator.z = 1;
             this.interactionIndicator.visible = true;
             //console.log(this.interactionIndicator)
-        } else if (this.canInteract && this.canInteract.type == "chest") {
-            console.log("interaction avec chest")
+        } else if (this.canInteract && (this.canInteract.type == "chest" || this.canInteract.type == "waterWell" || this.canInteract.type == "human")) {
             const cur = this.canInteract
             const midX = cur.x //+ 50 //(this.x + berryBush.x) / 3;
             const midY = cur.y + 50 * (this.y+10 > cur.y ? -1 : 1) //this.y //this.y + (this.y + berryBush.y) / 2;
@@ -258,11 +259,23 @@ export class Player extends Phaser.GameObjects.Sprite {
                     this.actions.openChest(this.canInteract.id);
                     this.tasks.openChest(this, this.canInteract);
                     this.canInteract.chestTypeOpened(); //on ne peut plus ouvrir le coffre
-                    //créer une fonction dans task pour mettre visuellement l'objet ?
                 }
             }
             if (this.canInteract.type == "chestOpened") {
                 console.log("Le coffre a déjà été ouvert !")
+            }
+            if (this.canInteract.type == "waterWell" && this.inventory.includes("sceau")){
+                if (this.actions.fillBucket) {
+                    this.actions.fillBucket(this.canInteract.id);
+                    this.tasks.fillBucket(this);
+                }
+            }
+            if (this.canInteract.type == "human" && this.inventory.includes("couteau")){
+                console.log("Interaction entre humains. Il le tue.");
+                if (this.actions.killByKnife) {
+                    this.actions.killByKnife(this.canInteract);
+
+                }
             }
         }
 
@@ -292,14 +305,18 @@ export class Player extends Phaser.GameObjects.Sprite {
     
         // On efface juste le contenu interne de chaque slot (mais on garde la div)
         slots.forEach((slot, index) => {
+            slot.innerHTML = ''; // On efface le contenu du slot
+            slot.style.backgroundColor = '';
 
             if (this.inventory[index]) {
-                slot.innerHTML = ''; // On efface le contenu du slot
-
                 const img = document.createElement('img');
                 img.src = `/static/tilemaps/${this.inventory[index]}.png`;
                 img.alt = this.inventory[index];
                 img.classList.add('inventory-item');
+
+                if (this.inventory[index] == "sceau" && this.fillBucket == true) {
+                    slot.style.backgroundColor = 'rgb(64, 192, 218)';
+                }
             
                 slot.appendChild(img); 
             } else {
