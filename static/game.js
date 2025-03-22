@@ -479,6 +479,11 @@ var game = new Phaser.Game(config)
   }
 
 //Vue.js pour gérer la chatbox
+// Récupérer les données de la room depuis localStorage
+
+const roomData = JSON.parse(localStorage.getItem("roomData")) || {};
+const playerName = roomData.pseudo || "Joueur"; // on  Récupér le pseudo
+
 const app = Vue.createApp({
   data() {
       return {
@@ -488,6 +493,11 @@ const app = Vue.createApp({
   },
   methods: {
       sendMessage() {
+          if (!socket) {
+              console.error("Socket.io non initialisé !");
+              return;
+          }
+
           if (this.newMessage.trim() !== "") {
               socket.emit("chat-message", { player: playerName, message: this.newMessage });
               this.newMessage = "";
