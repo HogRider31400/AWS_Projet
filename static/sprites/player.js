@@ -2,7 +2,7 @@ import { getImpostorTasks, getPlayerTasks } from "../tasks.js";
 import { Chest } from "./chest.js"
 
 export class Player extends Phaser.GameObjects.Sprite {
-    constructor (scene, x, y, active, role = "player")
+    constructor (scene, x, y, active, role = "player", id = -1)
     {
         super(scene, x, y, 'player', 0);
         this.scene = scene;
@@ -10,6 +10,7 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.role = role;
         this.type = "human";
         this.ghost = false;
+        this.id = id;
         this.inventory = [];
         if (role == "player") {
             this.tasks = getPlayerTasks();
@@ -273,7 +274,7 @@ export class Player extends Phaser.GameObjects.Sprite {
             if (this.canInteract.type == "human" && this.inventory.includes("couteau")){
                 console.log("Interaction entre humains. Il le tue.");
                 if (this.actions.killByKnife) {
-                    this.actions.killByKnife(this.canInteract);
+                    this.actions.killByKnife(this.canInteract.id);
 
                 }
             }

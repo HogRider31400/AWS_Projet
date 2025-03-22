@@ -516,7 +516,7 @@ app.mount("#app");
             otherPlayer.direction = newDirection;
 
           } else {
-            const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false)
+            const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false, id)
             console.log(otherPlayer)
             scene.elements.push(this.otherPlayer); //player doit interagir avec otherplayer
             scene.add.existing(otherPlayer);
