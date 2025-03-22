@@ -341,10 +341,20 @@ var game = new Phaser.Game(config)
 
     this.player.onAction('fillBucket', (waterWell_i) => {
       socket.emit('action', {
-        type : 'fillBucket',
+        type : 'fill_bucket',
+        item_id : waterWell_i,
         player : socket.id
       })
       console.log("onAction : fillBucket");
+    })
+
+    this.player.onAction('killByKnife', (victim_i) => {
+      socket.emit('action', {
+        type : 'kill',
+        victim : victim_i,
+        player : socket.id
+      })
+      console.log("onAction : killByKnife");
     })
 
 
@@ -406,6 +416,7 @@ var game = new Phaser.Game(config)
         frameRate: 10,
         repeat: -1
     });
+
 
   }
 
@@ -500,12 +511,13 @@ app.mount("#app");
               newY
             );
             //if(newDirection.x == "n" && newDirection.y == "n")//(distance > 10)
-              otherPlayer.setPosition(newX, newY);
+            otherPlayer.setPosition(newX, newY);
             otherPlayer.direction = newDirection;
 
           } else {
             const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false)
             console.log(otherPlayer)
+            scene.elements.push(this.otherPlayer); //player doit interagir avec otherplayer
             scene.add.existing(otherPlayer);
             console.log("on ajoute joueur et on a " + otherPlayer.active)
             otherPlayer.oldX = playersData[id].x;

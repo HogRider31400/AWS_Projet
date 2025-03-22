@@ -13,7 +13,7 @@ process.env['DATABASE_URL'] = 'file:./prisma/dev.db';
 
 const saltRounds = 10;
 const prisma = new PrismaClient();
-const PORT = 80;
+const PORT = process.env.PORT || 80;
 let players = {};
 let rooms = {};
 let socketId_socket = {};
