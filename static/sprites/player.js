@@ -271,7 +271,7 @@ export class Player extends Phaser.GameObjects.Sprite {
                     this.tasks.fillBucket(this);
                 }
             }
-            if (this.canInteract.type == "human" && this.inventory.includes("couteau")){
+            if (this.canInteract.type == "human" && (this.inventory.includes("couteau") || this.inventory.includes("hache"))){
                 console.log("Interaction entre humains. Il le tue.");
                 if (this.actions.killByKnife) {
                     this.actions.killByKnife(this.canInteract.id);

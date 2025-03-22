@@ -793,9 +793,10 @@ io.on('connection', (socket) => {
     let r_players = {};
     Object.keys(players).forEach(id => {
       if(connected_players[id].room_id != connected_players[socket.id].room_id) return;
-      if(!players[socket.id].alive) return;
+      if(!players[id].alive) return;
       r_players[id] = players[id]
     }) 
+    //console.log(r_players)
     io.to(connected_players[socket.id].room_id+"/game").emit('positions', r_players);
   });
   socket.on('open_chest', (data) => {
@@ -853,7 +854,8 @@ io.on('connection', (socket) => {
     if(data.type == "kill"){
       if(!data.victim) return;
       if(!connected_players[socket.id]) return;
-      players[data.player].alive = false;
+      console.log("ça tue")
+      players[data.victim].alive = false;
       io.to(connected_players[socket.id].room_id + "/game").emit('game', {
         type : "remove_player",
         id : data.victim

@@ -39,5 +39,5 @@ document.addEventListener("DOMContentLoaded", function () {
   closeVoteModal.addEventListener("click", () => {
     voteModal.style.display = "none";
   });
-  showVoteModal([{ id: "player1", name: "Joueur 1" }, { id: "player2", name: "Joueur 2" }]);
+  //showVoteModal([{ id: "player1", name: "Joueur 1" }, { id: "player2", name: "Joueur 2" }]);
 });

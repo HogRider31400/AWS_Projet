@@ -189,9 +189,20 @@ var game = new Phaser.Game(config)
         if(!data.id) return;
         console.log("Faut remove le joueur " + data.id, "après je crois c déjà fait")
         //On met le mode spectateur sur le joueur si il est mort
-        if(data.id != socket.id) return;
+        if(data.id != socket.id) {
+          console.log(otherPlayers[data.id])
+          otherPlayers[data.id].destroy()
+          delete otherPlayers[data.id]
+          
+          return
+        };
         this.player.ghost = true;
-        this.player.tint = 0xF8F7ED
+        this.player.tint = 0xFF0000
+        this.player.interactionIndicator.visible = true;
+        this.player.interactionIndicator2.visible = false;
+        this.player.square.x = -1
+        this.player.square.y = -1
+        console.log("ct nous !!")
       }
       if(data.type == "broadcast") {
         console.log("On a reçu : " + data.message)
@@ -516,9 +527,9 @@ app.mount("#app");
             otherPlayer.direction = newDirection;
 
           } else {
-            const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false, id)
-            console.log(otherPlayer)
-            scene.elements.push(this.otherPlayer); //player doit interagir avec otherplayer
+            const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false, "player", id)
+            console.log(otherPlayer.id)
+            scene.elements.push(otherPlayer); //player doit interagir avec otherplayer
             scene.add.existing(otherPlayer);
             console.log("on ajoute joueur et on a " + otherPlayer.active)
             otherPlayer.oldX = playersData[id].x;
