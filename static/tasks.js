@@ -22,8 +22,7 @@ export function getImpostorTasks() {
         dropItem,
         openChest,
         fillBucket,
-        throwItem,
-        knife
+        throwItem
     };
 }
 
@@ -190,8 +189,4 @@ export function throwItem(player) {
         console.log(`L'imposteur jette un objet'.`, player.inventory);
         const itemToDrop = player.inventory.pop();
     }
-}
-
-export function knife(player) {
-
 }
