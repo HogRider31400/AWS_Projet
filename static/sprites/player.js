@@ -279,13 +279,6 @@ export class Player extends Phaser.GameObjects.Sprite {
                 }
             }
         }
-
-        const item = this.tasks.dropItem(this);
-        if (item) {
-            console.log('Action déposer un objet réalisée !');
-            this.actions.dropItem(item);
-        }
-
     }
 
     onWaterCollision() {
