@@ -11,3 +11,6 @@ canvas {
     left: 20%;
     z-index: 1;
 }
+dialog::backdrop {
+    background: rgba(66, 52, 52, 0.25);
+}

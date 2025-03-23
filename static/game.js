@@ -47,6 +47,23 @@ function renderTasks() {
   });
 }
 
+function openVote(otherPlayers){
+  const modal = document.getElementById("voteModal")
+  modal.showModal()
+  const playersOpt = document.getElementById("playersVote")
+  playersOpt.innerHTML = "";
+  console.log("salut")
+  console.log(otherPlayers)
+  Object.values(otherPlayers).forEach(val => {
+    const curP = document.createElement("option")
+    curP.innerText = val.id
+    curP.value = val.id
+    console.log("une val")
+    console.log(curP)
+    playersOpt.appendChild(curP)
+  })
+}
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const socket = await io();
 window.socket = socket;
@@ -213,6 +230,8 @@ var game = new Phaser.Game(config)
             elem.isNowDepleted();
           })
         })
+
+  
       }
       if(data.type == "remove_player"){
         if(!data.id) return;
@@ -281,6 +300,7 @@ var game = new Phaser.Game(config)
         }
         if(data.time == "night"){
           console.log("C'est la nuit " + data.cur_night)
+          openVote(otherPlayers)
           //Ici on doit s'occuper de faire en sorte que les gens votent
         }
       }
@@ -296,6 +316,20 @@ var game = new Phaser.Game(config)
       //console.log(data);
       updateOtherPlayers(this);
     });
+
+    //On init le bouton
+    const btn = document.getElementById("voteBtn")
+    btn.addEventListener('click', () => {
+      const voteV = document.getElementById('playersVote').value;
+      console.log("ça vote " + voteV)
+      socket.emit("action", {
+        type: "vote",
+        vote: voteV,
+        player: socket.id
+      });
+      document.getElementById("voteModal").close()
+    })
+
 
     socket.on('action', (data) => {
       /*
