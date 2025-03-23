@@ -278,30 +278,6 @@ export class Player extends Phaser.GameObjects.Sprite {
                 }
             }
         }
-
-        const inventory = document.querySelector('.inventory');
-        //la souris entre dans un élément, sans remonter à ses enfants.
-        inventory.addEventListener('mouseenter', () => {
-            inventory.isHovered = true;
-        });
-        //la souris quitte l'élément, sans tenir compte des enfants
-        inventory.addEventListener('mouseleave', () => {
-            inventory.isHovered = false;
-        });
-
-        if (inventory.isHovered) {
-            const slots = document.querySelectorAll('.inventory-slot');
-            slots.forEach((slot, index) => {
-                slot.addEventListener('click', () => {
-                    const item = this.tasks.dropItem(this, slot, index);
-                    if (item) {
-                        console.log('Action déposer un objet réalisée !');
-                        this.actions.dropItem(item);
-                    }
-                });
-            });
-        }
-
     }
 
     onWaterCollision() {

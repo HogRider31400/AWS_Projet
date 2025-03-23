@@ -74,7 +74,7 @@ export function pickUpWood(player, woodPile) {
     //return player.inventory;
 }
 
-export function dropItem(player, slot, index) {
+export function dropItem(player, index) {
 
         if (player.inventory.length > 0) {
             // On récupère l'objet à déposer
