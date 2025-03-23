@@ -271,7 +271,10 @@ var game = new Phaser.Game(config)
       if(data.type == "completed_task") {
         const tasks = JSON.parse(localStorage.getItem("tasks"))
         console.log("Vous avez complété : " + data.name)
-        tasks[data.name].completed = true;
+        Object.values(tasks).forEach(val => {
+          if(val.name == data.name) val.completed = true;
+        })
+        //tasks[data.name].completed = true;
         localStorage.setItem('tasks', JSON.stringify(tasks));
         renderTasks();
       }
@@ -398,7 +401,7 @@ var game = new Phaser.Game(config)
 
     this.player.onAction('openChest', (chest_id) => {
       const items = [
-        { type: 'sceau', id: '1' },
+        { type: 'seau', id: '1' },
         { type: 'couteau', id: '2' },
         { type: 'hache', id: '3' }
       ];
@@ -413,7 +416,7 @@ var game = new Phaser.Game(config)
 
       socket.emit('open_chest', { 
         type : 'openChest',
-        item_type : items.type,
+        item_type : item.type,
         item_id : chest_id,
         player: socket.id 
       });

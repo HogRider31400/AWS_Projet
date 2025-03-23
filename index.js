@@ -454,14 +454,12 @@ app.get('/game', function (req, res) {
 //Les constantes de tâches
 const GATHER_BERRIES = "Récolter des baies";
 const GATHER_WOOD = "Récolter des branches";
-const GATHER_STONE = "Récolter des cailloux";
 const OPEN_CHEST = "Ouvrir un coffre";
 const EQUIP_BUCKET = "Equiper un seau";
 const FILL_BUCKET = "Remplir un seau d'eau";
 
 const T_THROW_RES = "Jeter des ressources";
 const T_SET_ONFIRE = "Mettre le feu";
-const T_EQUIP_GUN = "Equiper un pistoler";
 //La fonction de jeu
 
 const tasks = {
@@ -469,17 +467,12 @@ const tasks = {
     {
       name : GATHER_BERRIES,
       item_type : "berry",
-      qte : 5
+      qte : 4
     },
     {
       name : GATHER_WOOD,
       item_type : "wood",
-      qte : 5
-    },
-    {
-      name : GATHER_STONE,
-      item_type : "stone",
-      qte : 3
+      qte : 4
     },
     {
       name : OPEN_CHEST,
@@ -609,7 +602,7 @@ async function launch_game(room_id){
       cur_day : nb_jours,
       time : 'day'
     })
-
+    console.log("Le jour "+ nb_jours +" commence")
     //On donne les tâches
     shuffle(tasks.castaways)
     shuffle(tasks.traitors)
@@ -650,7 +643,7 @@ async function launch_game(room_id){
     //Aussi on va faire en sorte que ça dure ~~ 60 secondes voire plus court
     let nb_iters = 0;
     while(nb_iters < 60){
-      if(get_alive_players(room_id, true) == 1){
+      if(get_alive_players(room_id, true) == 0){
         end_game(room_id, 1)
         return;
       }
@@ -667,6 +660,7 @@ async function launch_game(room_id){
       cur_night : nb_jours,
       time : 'night'
     })
+    console.log("La nuit "+ nb_jours +" commence")
 
     //Est-ce que les joueurs n'ont pas fait leurs tâches ?
     //Si oui alors c perdu ! (p-ê un peu sévère ?)
@@ -727,7 +721,7 @@ async function launch_game(room_id){
     }
 
     //Vous avez éliminé tous les survivants sauf un ? Fini !! (p-ê mettre 0 ?)
-    if(get_alive_players(room_id, true) == 1){
+    if(get_alive_players(room_id, true) == 0){
       end_game(room_id,1)
     }
 
@@ -817,7 +811,7 @@ io.on('connection', (socket) => {
       Object.values(players[data.player].tasks).forEach(val => {
         if(val.item_type == data.item_type && !val.completed){
           val.qte--;
-          //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
+          console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
           socket.emit('game',{
             type : "completed_task",
             name : val.name
@@ -871,11 +865,11 @@ io.on('connection', (socket) => {
       connected_players[data.player].inventory.splice(bucket_id, 1);
       connected_players[data.player].inventory.push("seau_plein");
       //On regarde si il devait fill un bucket
-      if(players[data.player].task)
+      if(players[data.player].tasks != null)
         Object.values(players[data.player].tasks).forEach(val => {
           if(val.item_type == "seau_plein" && !val.completed){
             val.qte--;
-            //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
+            console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
             socket.emit('game',{
               type : "completed_task",
               name : val.name
@@ -896,7 +890,7 @@ io.on('connection', (socket) => {
       })
       if(item_id == -1) return;
       //On regarde si on complète une task avec
-      if(players[data.player].task)
+      if(players[data.player].tasks != null)
         Object.values(players[data.player].tasks).forEach(val => {
           if(val.name == T_THROW_RES && !val.completed){
             val.qte--;
@@ -926,21 +920,22 @@ io.on('connection', (socket) => {
       if (distance(px,py,ix,iy) > 100) return; //il est trop loin pour le faire
       //console.log("ahouuuu")
       //On regarde si le joueur a une tâche à faire en rapport avec l'objet récup
-      if(players[data.player].task)
-        Object.values(players[data.player].tasks).forEach(val => {
-          if(val.item_type == data.item_type && !val.completed){
-            if(data.item_type == "wood")
-              val.qte-=4;
-            else val.qte -= 5;
-            if(val.qte == 0){
-              //console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
-              socket.emit('game',{
-                type : "completed_task",
-                name : val.name
-              })
-              val.completed = true;
-            }
+      if(players[data.player].tasks != null)
+      Object.values(players[data.player].tasks).forEach(val => {
+        console.log(val.item_type, data.item_type, val.completed)
+        if(val.item_type == data.item_type && !val.completed){
+          if(data.item_type == "wood")
+            val.qte-=4;
+          else val.qte -= 5;
+          if(val.qte <= 0){
+            console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
+            socket.emit('game',{
+              type : "completed_task",
+              name : val.name
+            })
+            val.completed = true;
           }
+        }
         })
 
       //On l'ajoute à l'inventaire
