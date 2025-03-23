@@ -24,6 +24,29 @@ var config = {
     }
   }
 
+function renderTasks() {
+  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  const taskListDiv = document.getElementById('task-list');
+  taskListDiv.innerHTML = ''; // Vider la liste actuelle
+
+  tasks.forEach((task, index) => {
+      const taskDiv = document.createElement('div');
+      taskDiv.classList.add('task');
+
+      if (task.completed) {
+          taskDiv.classList.add('completed'); // Barrer si terminé ( cette ligne concerne quand la tache terminé) 
+      }
+
+      const checkboxSpan = document.createElement('span');
+      checkboxSpan.textContent = task.completed ? '✔' : '';
+
+
+      taskDiv.appendChild(checkboxSpan);
+      taskDiv.appendChild(document.createTextNode(task.name));
+      taskListDiv.appendChild(taskDiv);
+  });
+}
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const socket = await io();
 window.socket = socket;
@@ -172,6 +195,12 @@ var game = new Phaser.Game(config)
         console.log(pos.x, pos.y, "aouuu")
         this.player.x = pos.x
         this.player.y = pos.y
+        if(data.inventory)
+          this.player.inventory = data.inventory
+        const tasks = data.tasks || [];
+        localStorage.setItem('tasks', JSON.stringify(data.tasks)); // ici on Sauvegarde les taches recu de  serv dans le localStorage
+        renderTasks();
+        document.getElementById("role").innerHTML = "Votre rôle est : " + data.role;
         console.log(data.tasks)
         if(started)
           this.game_started = true;
@@ -212,6 +241,7 @@ var game = new Phaser.Game(config)
       if(data.type == "assign_role") {
         //Ici data.role c'est soit Traître soit Survivant
         console.log("Vous avez été assigné le rôle : " + data.role)
+        document.getElementById("role").innerHTML = "Votre rôle est : " + data.role;
       }
       if(data.type == "assign_tasks") {
         console.log("Vous avez reçu les tâches suivantes")
@@ -220,7 +250,11 @@ var game = new Phaser.Game(config)
         renderTasks(); // puis ici on Met à jour l'affichage
       }
       if(data.type == "completed_task") {
+        const tasks = JSON.parse(localStorage.getItem("tasks"))
         console.log("Vous avez complété : " + data.name)
+        tasks[data.name].completed = true;
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        renderTasks();
       }
       if(data.type == "end_game") {
         if(side == "Survivant"){

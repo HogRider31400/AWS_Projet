@@ -2,13 +2,12 @@ body {
     margin: 0;
     padding: 0;
     overflow: hidden;
+    background : #1a1f2c;
 }
 
 canvas {
-    position: absolute;
+    position: fixed;
     top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    left: 20%;
     z-index: 1;
 }
