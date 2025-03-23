@@ -2,8 +2,8 @@
 
 
 
-  // jai supprimer le tableau qui etait dans ce  code de thushant car on en aura pas besoin  , 
-  // jai rajouetre  const tasks = JSON.parse(localStorage.getItem("tasks")) || []; pour afficher les taches recu 
+  // jai supprimé le tableau qui etait dans ce  code de thushant car on en aura pas besoin  , 
+  // jai rajoueté  const tasks = JSON.parse(localStorage.getItem("tasks")) || []; pour afficher les taches recu 
 document.addEventListener('DOMContentLoaded', () => {
   const taskListDiv = document.getElementById('task-list');
   const toggleButton = document.getElementById('toggle-button');
