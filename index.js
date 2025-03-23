@@ -965,10 +965,21 @@ io.on('connection', (socket) => {
   })
   //Gestion de chat 
   socket.on("chat-message", (data) => {
-      console.log(`Message reçu de ${data.player}: ${data.message}`);
-      io.to(connected_players[socket.id].room_id).emit("chat-message", data); // Envoie le message à tous les joueurs
+    console.log(`Message reçu de ${data.player}: ${data.message}`);
+  
+    if (!connected_players[socket.id] || !connected_players[socket.id].room_id) {
+        console.error("Erreur : le joueur n'est pas dans une room.");
+        return;
+    }
+  
+    const room = connected_players[socket.id].room_id + "/game";
+    //console.log(`Message transmis à la room : ${room}`);
+  
+    io.to(room).emit("chat-message", {
+        player: data.player, // On utilise bien le pseudo reçu
+        message: data.message
+    });
   });
-
   socket.on('disconnect', () => {
       console.log(`Joueur déconnecté : ${socket.id}`);
       //Le joueur est parti, on va le garder dans old_players si jamais il se reco
