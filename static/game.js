@@ -479,10 +479,9 @@ var game = new Phaser.Game(config)
   }
 
 //Vue.js pour gérer la chatbox
-// Récupérer les données de la room depuis localStorage
 
 const roomData = JSON.parse(localStorage.getItem("roomData")) || {};
-const playerName = roomData.pseudo || "Joueur"; // on  Récupér le pseudo
+const playerName = roomData.pseudo || "Joueur"; //  on récuper le pseudo
 
 const app = Vue.createApp({
   data() {
