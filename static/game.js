@@ -216,6 +216,8 @@ var game = new Phaser.Game(config)
       if(data.type == "assign_tasks") {
         console.log("Vous avez reçu les tâches suivantes")
         console.log(data.tasks)
+        localStorage.setItem('tasks', JSON.stringify(data.tasks)); // ici on Sauvegarde les taches recu de  serv dans le localStorage
+        renderTasks(); // puis ici on Met à jour l'affichage
       }
       if(data.type == "completed_task") {
         console.log("Vous avez complété : " + data.name)
