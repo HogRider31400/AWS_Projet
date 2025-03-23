@@ -475,11 +475,6 @@ const tasks = {
       qte : 4
     },
     {
-      name : OPEN_CHEST,
-      item_type : "chest",
-      qte : 1
-    },
-    {
       name : EQUIP_BUCKET,
       item_type : "seau",
       qte : 1
@@ -552,7 +547,7 @@ function end_game(room_id, ending=0){
 
   io.to(room_id+"/game").emit('game',{
     type: 'end_game',
-    type : side
+    side : side
   })
   rooms[room_id].game_started = false;
 }
@@ -642,11 +637,12 @@ async function launch_game(room_id){
     //On va itérer toutes les secondes pour voir si tlm est mort (dans ce cas RIP)
     //Aussi on va faire en sorte que ça dure ~~ 60 secondes voire plus court
     let nb_iters = 0;
-    while(nb_iters < 60){
+    while(nb_iters < 20){
       if(get_alive_players(room_id, true) == 0){
         end_game(room_id, 1)
         return;
       }
+      nb_iters++;
       await sleep(1000);
     }
     //await sleep(1000 * 60 * 3)
@@ -688,7 +684,7 @@ async function launch_game(room_id){
     })
 
     //On met le sleep pour laisser les gens voter
-    await sleep(1000*60*0.5) //30s par ex
+    await sleep(1000*20) //30s par ex
 
     //On récup le max dans votes
     let player_id = -1;

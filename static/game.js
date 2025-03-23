@@ -279,20 +279,12 @@ var game = new Phaser.Game(config)
         renderTasks();
       }
       if(data.type == "end_game") {
-        if(side == "Survivant"){
+        if(data.side == "Survivant"){
           const sModal = document.getElementById("sWin");
-          const rButton = document.getElementById("retourIndex1");
-          rButton.addEventListener("click", () => {
-            document.location.href = "/"
-          })
           sModal.showModal();
         }
         else {
           const tModal = document.getElementById("tWin");
-          const rButton = document.getElementById("retourIndex2");
-          rButton.addEventListener("click", () => {
-            document.location.href = "/"
-          })
           tModal.showModal();
         }
       }
