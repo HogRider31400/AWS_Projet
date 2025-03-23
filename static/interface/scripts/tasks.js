@@ -1,47 +1,56 @@
+
+
+
+
+  // jai supprimer le tableau qui etait dans ce  code de thushant car on en aura pas besoin  , 
+  // jai rajouetre  const tasks = JSON.parse(localStorage.getItem("tasks")) || []; pour afficher les taches recu 
 document.addEventListener('DOMContentLoaded', () => {
-    const tasks = [
-      { id: 1, title: 'Chercher du bois', completed: false },
-      { id: 2, title: 'Chercher de la pierre', completed: false },
-      { id: 3, title: 'Trouver un sceau', completed: false },
-      { id: 4, title: 'Trouver des coffres', completed: false },
-    ];
-  
-    const toggleButton = document.getElementById('toggle-button');
-    const taskListDiv = document.getElementById('task-list');
-    let isOpen = false;
-  
-    function renderTasks() {
-      taskListDiv.innerHTML = ''; 
-      tasks.forEach(task => {
+  const taskListDiv = document.getElementById('task-list');
+  const toggleButton = document.getElementById('toggle-button');
+  let isOpen = false;
+
+  function renderTasks() {
+    const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+    taskListDiv.innerHTML = ''; // Vider la liste actuelle
+
+    tasks.forEach((task, index) => {
         const taskDiv = document.createElement('div');
         taskDiv.classList.add('task');
+
         if (task.completed) {
-          taskDiv.classList.add('completed');
+            taskDiv.classList.add('completed'); // Barrer si terminé ( cette ligne concerne quand la tache terminé) 
         }
-        taskDiv.dataset.taskId = task.id; 
+
         const checkboxSpan = document.createElement('span');
         checkboxSpan.classList.add('checkbox');
-        checkboxSpan.textContent = task.completed ? 'x' : '';
-        taskDiv.appendChild(checkboxSpan);
-        taskDiv.appendChild(document.createTextNode(task.title));
+        checkboxSpan.textContent = task.completed ? '✔' : '';
+
+        
         taskDiv.addEventListener('click', () => {
-          task.completed = !task.completed;
-          renderTasks();
+            tasks[index].completed = !tasks[index].completed; // Inverser l'état
+            localStorage.setItem('tasks', JSON.stringify(tasks)); // Sauvegarder
+            renderTasks(); // Re-render
         });
-  
+
+        taskDiv.appendChild(checkboxSpan);
+        taskDiv.appendChild(document.createTextNode(task.name));
         taskListDiv.appendChild(taskDiv);
-      });
-    }
-    renderTasks();
-    toggleButton.addEventListener('click', () => {
-      isOpen = !isOpen;
-      if (isOpen) {
-        taskListDiv.style.display = 'block';
-        toggleButton.textContent = 'Fermer les tâches';
-      } else {
-        taskListDiv.style.display = 'none';
-        toggleButton.textContent = 'Ouvrir les tâches';
-      }
     });
-  });
-  
+}
+
+
+renderTasks();
+
+toggleButton.addEventListener('click', () => {
+  isOpen = !isOpen;
+  if (isOpen) {
+    taskListDiv.style.display = 'block';
+    toggleButton.textContent = 'Fermer les tâches';
+  } else {
+    taskListDiv.style.display = 'none';
+    toggleButton.textContent = 'Ouvrir les tâches';
+  }
+});
+});
+
+
