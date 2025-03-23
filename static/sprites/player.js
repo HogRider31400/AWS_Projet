@@ -265,7 +265,7 @@ export class Player extends Phaser.GameObjects.Sprite {
             if (this.canInteract.type == "chestOpened") {
                 console.log("Le coffre a déjà été ouvert !")
             }
-            if (this.canInteract.type == "waterWell" && this.inventory.includes("sceau")){
+            if (this.canInteract.type == "waterWell" && this.inventory.includes("seau")){
                 if (this.actions.fillBucket) {
                     this.actions.fillBucket(this.canInteract.id);
                     this.tasks.fillBucket(this);
@@ -315,7 +315,7 @@ export class Player extends Phaser.GameObjects.Sprite {
                 img.alt = this.inventory[index];
                 img.classList.add('inventory-item');
 
-                if (this.inventory[index] == "sceau" && this.fillBucket == true) {
+                if (this.inventory[index] == "seau" && this.fillBucket == true) {
                     slot.style.backgroundColor = 'rgb(64, 192, 218)';
                 }
             

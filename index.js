@@ -544,6 +544,9 @@ function end_game(room_id, ending=0){
   else if (ending == 2){
     g_broadcast("L'un de vous n'a pas fait ses tâches, vous ne parvenez pas à subsister et la faim vous emporte", room_id)
   }
+  else if (ending == 3){
+    g_broadcast("Le traître a été éliminé, félicitations !", room_id)
+  }
 
   io.to(room_id+"/game").emit('game',{
     type: 'end_game',
@@ -665,7 +668,7 @@ async function launch_game(room_id){
     Object.keys(players).forEach(id => {
       if(connected_players[id].room_id != room_id) return;
       if(!players[id].alive) return;
-
+      if(players[id].role == "Traître") return;
       Object.values(players[id].tasks).forEach(val => {
         if(!val.completed) found_one = true;
       })
@@ -711,14 +714,19 @@ async function launch_game(room_id){
     else {
       //On reveal son rôle ou pas ?
       io.to(room_id + "/game").emit('game', {
-        type : "elimination",
+        type : "kill",
         player_id : player_id
       })
+      players[player_id].alive = false
+      if(players[player_id].role == "Traître"){
+        end_game(room_id,)
+      }
     }
 
     //Vous avez éliminé tous les survivants sauf un ? Fini !! (p-ê mettre 0 ?)
     if(get_alive_players(room_id, true) == 0){
       end_game(room_id,1)
+      return;
     }
 
   }
@@ -803,8 +811,9 @@ io.on('connection', (socket) => {
     connected_players[data.player].inventory.push(data.item_type)
     //On se dit qu'on récup 1 objet et qu'on récup que des objets de tâches à qte 1
     //Ce qui est le cas
-    if(players[data.player].task)
+    if(players[data.player].tasks != null)
       Object.values(players[data.player].tasks).forEach(val => {
+        console.log(val.item_type, data.item_type, val.completed)
         if(val.item_type == data.item_type && !val.completed){
           val.qte--;
           console.log("Le joueur " + data.player + " a fait la tâche " + val.name);
@@ -853,11 +862,13 @@ io.on('connection', (socket) => {
 
     }
     if(data.type == "fill_bucket"){
+      console.log("on a rempli un seau ouaiis")
       let bucket_id = -1;
       Object.keys(connected_players[data.player].inventory).forEach(i => {
         if(connected_players[data.player].inventory[i] == "seau")
           bucket_id = i;
       })
+      console.log("c passé")
       connected_players[data.player].inventory.splice(bucket_id, 1);
       connected_players[data.player].inventory.push("seau_plein");
       //On regarde si il devait fill un bucket

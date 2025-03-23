@@ -279,6 +279,7 @@ var game = new Phaser.Game(config)
         renderTasks();
       }
       if(data.type == "end_game") {
+        document.getElementById("voteModal").close()
         if(data.side == "Survivant"){
           const sModal = document.getElementById("sWin");
           sModal.showModal();
@@ -292,6 +293,7 @@ var game = new Phaser.Game(config)
         console.log("On a reçu des infos sur le temps")
         if(data.time == "day"){
           console.log("C'est le jour " + data.cur_day)
+          document.getElementById("voteModal").close()
         }
         if(data.time == "night"){
           console.log("C'est la nuit " + data.cur_night)
@@ -394,8 +396,8 @@ var game = new Phaser.Game(config)
     this.player.onAction('openChest', (chest_id) => {
       const items = [
         { type: 'seau', id: '1' },
-        { type: 'couteau', id: '2' },
-        { type: 'hache', id: '3' }
+        //{ type: 'couteau', id: '2' },
+        //{ type: 'hache', id: '3' }
       ];
       const randomIndex = Math.floor(Math.random() * items.length);
       const item = items[randomIndex];
