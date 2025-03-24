@@ -1,8 +1,6 @@
 import { BerryBush } from "./sprites/berry_bush.js"
 import { OakPlanks } from "./sprites/oak_planks.js"
-import { Sceau } from "./sprites/sceau.js"
-import { Hache } from "./sprites/hache.js"
-import { Couteau } from "./sprites/couteau.js"
+import { Seau } from "./sprites/seau.js"
 
 export function getPlayerTasks() {
     return {
@@ -79,7 +77,6 @@ export function dropItem(player, index) {
         if (player.inventory.length > 0) {
             // On récupère l'objet à déposer
             const itemToDrop = player.inventory[index]; // On enlève l'objet de l'inventaire
-            console.log("index", index)
             //player.inventory[index] = null;
 
             const dropTileX = Math.floor((player.x + 50) / 32); // Conversion en coordonnées de tile
@@ -153,10 +150,10 @@ export function openChest(player, chest) {
 }
 
 export function fillBucket(player) {
-    console.log("Vous avez rempli le sceau");
+    console.log("Vous avez rempli le seau");
     player.fillBucket = true;
 
-    const bucketIndex = player.inventory.indexOf("sceau");
+    const bucketIndex = player.inventory.indexOf("seau");
     if (bucketIndex !== -1) {
         const slots = document.querySelectorAll('.inventory-slot');
         slots[bucketIndex].style.backgroundColor = 'rgb(64, 192, 218)';
@@ -164,14 +161,36 @@ export function fillBucket(player) {
 }
 
 ////ACTIONS DE L'IMPOSTEUR///
-export function throwItem(player) {
+export function throwItem(player, item) {
     console.log("throwItem")
     if (player.inventory.length === 0) {
         console.log(`Le joueur n'a rien à déposer.`);
         return;
     }
+    if (!player.inventory.includes(item)) {
+        console.log("L'objet n'est pas dans l'inventaire");
+        return;
+    }
     if (player.inventory.length > 0) {
+        let capacity = 0;
+        if (item == "berryBush") {
+            capacity = 5;
+        } else if (item == "woodPile") {
+            capacity = 4;
+        } else {
+            console.log("Impossible de jeter cet outil");
+            return;
+        }
+
+        let count = 0;
+        player.inventory = player.inventory.filter(itemInventory => {
+            if (itemInventory == item && count < capacity) {
+                count++;
+                return false;
+            }
+            return true;
+        });
+        player.updateInventory();
         console.log(`L'imposteur jette un objet'.`, player.inventory);
-        const itemToDrop = player.inventory.pop();
     }
 }

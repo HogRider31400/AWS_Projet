@@ -53,7 +53,8 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.cursors = scene.input.keyboard.createCursorKeys();
         this.keyA = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         this.keyD = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-        this.keyT = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+        this.keyB = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.B);
+        this.keyW = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
 
         this.moveSpeed = 200;
         this.last_sent = 10000;
@@ -284,7 +285,6 @@ export class Player extends Phaser.GameObjects.Sprite {
                 console.log("Interaction entre humains. Il le tue.");
                 if (this.actions.killByKnife) {
                     this.actions.killByKnife(this.canInteract.id);
-
                 }
             }
         }
@@ -292,14 +292,22 @@ export class Player extends Phaser.GameObjects.Sprite {
 
     onWaterCollision() {
         console.log("L'imposteur essaie de jeter un objet dans l'eau !", this.inventory);
-        if (Phaser.Input.Keyboard.JustDown(this.keyT)) {
-            this.tasks.throwItem(this);
+        if (Phaser.Input.Keyboard.JustDown(this.keyB)) {
+            this.tasks.throwItem(this, "berry");
+            this.actions.throwItem()
+        } else if (Phaser.Input.Keyboard.JustDown(this.keyW)) {
+            this.tasks.throwItem(this, "wood");
+            this.actions.throwItem()
         }
     }
     fireCollision() {
         console.log("L'imposteur essaie de jeter un objet dans le feu !", this.inventory);
-        if (Phaser.Input.Keyboard.JustDown(this.keyT)) {
-            this.tasks.throwItem(this);
+        if (Phaser.Input.Keyboard.JustDown(this.keyB)) {
+            this.tasks.throwItem(this, "berryBush");
+            this.actions.throwItem()
+        } else if (Phaser.Input.Keyboard.JustDown(this.keyW)) {
+            this.tasks.throwItem(this, "woodPile");
+            this.actions.throwItem()
         }
     }
 
