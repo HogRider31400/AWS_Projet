@@ -23,6 +23,7 @@ export class BerryBush extends Phaser.GameObjects.Sprite {
 
         //this.setTexture('redSquare');
         this.setPosition(x, y);
+        this.depleted = false;
         scene.physics.world.enable(this);
         this.body.setImmovable(true); //Sinon, quand collision alors ça part dans la direction de la collision
     }
@@ -36,6 +37,7 @@ export class BerryBush extends Phaser.GameObjects.Sprite {
     {
         //this.setTexture("depletedRedSquare")
         this.tile.tint = 0x7d7d48
+        this.depleted = true;
         
     }
 }

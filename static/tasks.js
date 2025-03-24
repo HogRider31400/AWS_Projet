@@ -28,7 +28,7 @@ export function getImpostorTasks() {
 
 export function pickUpBerry(player, berryBush) {
     if(!berryBush) return;
-
+     if(berryBush.depleted == true) return;
     if (player.inventory.length + 5 > 8) {
         console.log("L'inventaire est déjà plein !");
         return;
@@ -41,10 +41,10 @@ export function pickUpBerry(player, berryBush) {
     }
     console.log("Inventaire :", player.inventory);
 
-    berryBush.destroy();
-    player.scene.elements = player.scene.elements.filter(element => element !== berryBush);
-    const elementsLayer = player.scene.map.getLayer('elements').tilemapLayer;
-    elementsLayer.removeTileAt(berryBush.tile.x, berryBush.tile.y);
+    //berryBush.destroy();
+    //player.scene.elements = player.scene.elements.filter(element => element !== berryBush);
+    //const elementsLayer = player.scene.map.getLayer('elements').tilemapLayer;
+    //elementsLayer.removeTileAt(berryBush.tile.x, berryBush.tile.y);
 
     player.updateInventory();
     //return player.inventory;
@@ -52,7 +52,7 @@ export function pickUpBerry(player, berryBush) {
 
 export function pickUpWood(player, woodPile) {
     if(!woodPile) return;
-
+    if(woodPile.depleted == true) return;
     if (player.inventory.length + 4 > 8) {
         console.log("L'inventaire est déjà plein !");
         return;
@@ -65,10 +65,10 @@ export function pickUpWood(player, woodPile) {
     }
     console.log("Inventaire :", player.inventory);
 
-    woodPile.destroy();
-    player.scene.elements = player.scene.elements.filter(element => element !== woodPile);
-    const elementsLayer = player.scene.map.getLayer('elements').tilemapLayer;
-    elementsLayer.removeTileAt(woodPile.tile.x, woodPile.tile.y);
+    //woodPile.destroy();
+    //player.scene.elements = player.scene.elements.filter(element => element !== woodPile);
+    //const elementsLayer = player.scene.map.getLayer('elements').tilemapLayer;
+    //elementsLayer.removeTileAt(woodPile.tile.x, woodPile.tile.y);
 
     player.updateInventory();
     //return player.inventory;
