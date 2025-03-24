@@ -103,10 +103,10 @@ for(let layer_id in layers) {
     }
     else map[cur_id] = {...props} //là normalement on a récup les props à vérifier
     //On y ajoute aussi son x et son y
-    if(props.name == "berryBush") console.log(props, map[cur_id])
     map[cur_id].x = x
     map[cur_id].y = y
-
+    map[cur_id].tile_id = tile;
+    if(props.name == "woodPile") console.log(props, map[cur_id])
     cur_id++;
   }
 }
@@ -771,8 +771,8 @@ io.on('connection', (socket) => {
   socket.on('connect_game', (data) => {
     console.log(`Joueur connecté : ${socket.id}`);
     players[socket.id] = {
-        x: Math.floor(Math.random() * 800),
-        y: Math.floor(Math.random() * 600),
+        x: 500,
+        y: 500,
         direction: 'down',
         alive : true
     };
@@ -807,6 +807,58 @@ io.on('connection', (socket) => {
         console.log(socket.id + " violation vitesse de déplacement " + d_parcourue/(c_time - player.time_last_mvt) + "px/s")
         return;
       }
+      //Et si on cherchait à voir si il avait traversé un bloc INTERDIT ??
+      //Attention j'hardcode les IDs !
+      let forbidden_IDs = [196, 241, 242, 493, 458, 502, 503, 485, 486]
+
+      //Y'a un petit pb sur l'envoi des directions, il est pas complet
+      //Et de toute façon on peut pas faire confiance au client
+      //Donc on va devoir retrouver la direction
+      let dir_x = 0;
+      let dir_y = 0;
+      if(player.x - data.x < 0)
+        dir_x = -1;
+      else if (player.x - data.x > 0)
+        dir_x = 1;
+
+      if(player.y - data.y < 0)
+        dir_y = -1;
+      else if (player.y - data.y > 0)
+        dir_y = 1;
+
+      //On va se placer sur la tile de départ, et pour chaque morceau on va avancer d'une tile et regarder son id
+      //C'est tout !
+      let x_dep = Math.floor(player.x/32)
+      let y_dep = Math.floor(player.y/32)
+      let x_arr = Math.ceil(data.x/32)
+      let y_arr = Math.ceil(data.y/32)
+
+      //On va se dire qu'on fait au plus 1000 iters sinon : comportement non cohérent ?
+      let nb_iter = 1;
+      let x_cur = x_dep
+      let y_cur = y_dep
+      while(Math.abs(x_cur - x_arr) >= 5 && Math.abs(y_cur - y_arr) >= 5){
+        x_cur = x_dep + nb_iter * dir_x
+        y_cur = y_dep + nb_iter * dir_y
+        
+        console.log(x_cur,x_arr,y_cur,y_arr)
+        //Est-ce qu'on passe par le vide ?
+        //Le pire c'est que je sais même pas si c undefined ou null, je mets les 2
+        if(map[x_cur + "/" + y_cur] != undefined && map[x_cur + "/" + y_cur] != null) {
+          console.log("on est sur une vraie tile")
+          //Est-ce que l'id est dans forbidden_IDs ?
+          let cur_id = map[x_cur + "/" + y_cur].tile_id;
+          console.log("on est sur",cur_id)
+          if(forbidden_IDs.includes(cur_id)) return;
+          console.log("on est sur une bonne tile")
+        }
+        //C long
+        if(nb_iter > 10) return;
+        console.log("c'est pas trop long")
+        nb_iter++;
+      }
+      console.log("on s'en sort")
+
     }
     players[socket.id].time_last_mvt = Date.now()
     players[socket.id].x = data.x
