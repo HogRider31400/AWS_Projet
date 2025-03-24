@@ -534,8 +534,8 @@ function shuffle(array) {
 let game_started = {};
 
 const g_broadcast = (msg,room_id) => 
-  io.to(room_id + "/game").emit('game', {
-    type : "broadcast",
+  io.to(room_id + "/game").emit('chat-message', {
+    player : "[SYSTEME]",
     message : msg
   })
 
@@ -624,7 +624,7 @@ async function launch_game(room_id){
       cur_day : nb_jours,
       time : 'day'
     })
-    console.log("Le jour "+ nb_jours +" commence")
+    g_broadcast("Le jour "+ nb_jours +" commence", room_id)
     //On donne les tâches
     shuffle(tasks.castaways)
     shuffle(tasks.traitors)
@@ -683,7 +683,7 @@ async function launch_game(room_id){
       cur_night : nb_jours,
       time : 'night'
     })
-    console.log("La nuit "+ nb_jours +" commence")
+    g_broadcast("La nuit "+ nb_jours +" commence", room_id)
 
     //Est-ce que les joueurs n'ont pas fait leurs tâches ?
     //Si oui alors c perdu ! (p-ê un peu sévère ?)
