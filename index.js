@@ -103,10 +103,10 @@ for(let layer_id in layers) {
     }
     else map[cur_id] = {...props} //là normalement on a récup les props à vérifier
     //On y ajoute aussi son x et son y
-    if(props.name == "berryBush") console.log(props, map[cur_id])
     map[cur_id].x = x
     map[cur_id].y = y
-
+    map[cur_id].tile_id = tile;
+    if(props.name == "woodPile") console.log(props, map[cur_id])
     cur_id++;
   }
 }
@@ -293,16 +293,20 @@ function get_alive_players(room_id, no_traitre=false){
 connected_players = {}
 old_players = {}
 app.post("/connect_to_game", async (req,res) => {
+  console.log("ça essaye")
   if(!await isConnected(req)) {
     res.status(400).json({ error: "Token inconnu ou trop ancien." });
     return;
   }
   //On récup sa room !!
+  console.log("ça essaye2")
   let room_id = null;
+  let pseudo = null
   Object.keys(rooms).forEach(id => {
     Object.values(rooms[id].players).forEach(val => {
       if(val.token == req.cookies.token){
         room_id = id;
+        pseudo = val.player
       }
     })
   })
@@ -324,6 +328,8 @@ app.post("/connect_to_game", async (req,res) => {
   })
   connected_players[socketId].socket.join(room_id+"/game")
   connected_players[socketId].room_id = room_id;
+  players[socketId].pseudo = pseudo
+  console.log("il c co et il a", pseudo)
   if(other_id){
     let o = connected_players[other_id];
     connected_players[socketId].inventory = o.inventory
@@ -352,6 +358,7 @@ app.post("/connect_to_game", async (req,res) => {
       inventory : connected_players[socketId].inventory,
       map: map,
       started : game_started[room_id],
+      pseudo : pseudo,
       tasks : players[socketId].tasks,
       pos : { x : players[socketId].x, y : players[socketId].y},
       role : players[socketId].role,
@@ -365,6 +372,7 @@ app.post("/connect_to_game", async (req,res) => {
     map: map,
     position : null,
     tasks : null,
+    pseudo : pseudo,
     started : null,
     pos : { x : players[socketId].x, y : players[socketId].y},
     role : players[socketId].role,
@@ -489,12 +497,12 @@ const tasks = {
     {
       name : T_THROW_RES,
       item_type : "any",
-      qte : 3
+      qte : 1
     },
     {
       name : T_SET_ONFIRE,
       item_type : "any",
-      qte : 3
+      qte : 1
     },
     // {
     //   name : T_EQUIP_KNIFE,
@@ -526,8 +534,8 @@ function shuffle(array) {
 let game_started = {};
 
 const g_broadcast = (msg,room_id) => 
-  io.to(room_id + "/game").emit('game', {
-    type : "broadcast",
+  io.to(room_id + "/game").emit('chat-message', {
+    player : "[SYSTEME]",
     message : msg
   })
 
@@ -553,6 +561,22 @@ function end_game(room_id, ending=0){
     side : side
   })
   rooms[room_id].game_started = false;
+  rooms[room_id].launched = false;
+
+  let to_del = []
+
+  Object.values(rooms[room_id].players).forEach(val => {
+    Object.keys(connected_players).forEach(id => {
+      if(connected_players[id].token == val.token)
+        to_del.push(id)
+    })
+  })
+
+  to_del.forEach((val, i) =>{
+    delete connected_players[val]
+  })
+
+  delete rooms[room_id]
 }
 
 async function launch_game(room_id){
@@ -600,7 +624,7 @@ async function launch_game(room_id){
       cur_day : nb_jours,
       time : 'day'
     })
-    console.log("Le jour "+ nb_jours +" commence")
+    g_broadcast("Le jour "+ nb_jours +" commence", room_id)
     //On donne les tâches
     shuffle(tasks.castaways)
     shuffle(tasks.traitors)
@@ -659,7 +683,7 @@ async function launch_game(room_id){
       cur_night : nb_jours,
       time : 'night'
     })
-    console.log("La nuit "+ nb_jours +" commence")
+    g_broadcast("La nuit "+ nb_jours +" commence", room_id)
 
     //Est-ce que les joueurs n'ont pas fait leurs tâches ?
     //Si oui alors c perdu ! (p-ê un peu sévère ?)
@@ -720,6 +744,7 @@ async function launch_game(room_id){
       players[player_id].alive = false
       if(players[player_id].role == "Traître"){
         end_game(room_id,)
+        return
       }
     }
 
@@ -746,8 +771,8 @@ io.on('connection', (socket) => {
   socket.on('connect_game', (data) => {
     console.log(`Joueur connecté : ${socket.id}`);
     players[socket.id] = {
-        x: Math.floor(Math.random() * 800),
-        y: Math.floor(Math.random() * 600),
+        x: 500,
+        y: 500,
         direction: 'down',
         alive : true
     };
@@ -782,6 +807,58 @@ io.on('connection', (socket) => {
         console.log(socket.id + " violation vitesse de déplacement " + d_parcourue/(c_time - player.time_last_mvt) + "px/s")
         return;
       }
+      //Et si on cherchait à voir si il avait traversé un bloc INTERDIT ??
+      //Attention j'hardcode les IDs !
+      let forbidden_IDs = [196, 241, 242, 493, 458, 502, 503, 485, 486]
+
+      //Y'a un petit pb sur l'envoi des directions, il est pas complet
+      //Et de toute façon on peut pas faire confiance au client
+      //Donc on va devoir retrouver la direction
+      let dir_x = 0;
+      let dir_y = 0;
+      if(player.x - data.x < 0)
+        dir_x = -1;
+      else if (player.x - data.x > 0)
+        dir_x = 1;
+
+      if(player.y - data.y < 0)
+        dir_y = -1;
+      else if (player.y - data.y > 0)
+        dir_y = 1;
+
+      //On va se placer sur la tile de départ, et pour chaque morceau on va avancer d'une tile et regarder son id
+      //C'est tout !
+      let x_dep = Math.floor(player.x/32)
+      let y_dep = Math.floor(player.y/32)
+      let x_arr = Math.ceil(data.x/32)
+      let y_arr = Math.ceil(data.y/32)
+
+      //On va se dire qu'on fait au plus 1000 iters sinon : comportement non cohérent ?
+      let nb_iter = 1;
+      let x_cur = x_dep
+      let y_cur = y_dep
+      while(Math.abs(x_cur - x_arr) >= 5 && Math.abs(y_cur - y_arr) >= 5){
+        x_cur = x_dep + nb_iter * dir_x
+        y_cur = y_dep + nb_iter * dir_y
+        
+        console.log(x_cur,x_arr,y_cur,y_arr)
+        //Est-ce qu'on passe par le vide ?
+        //Le pire c'est que je sais même pas si c undefined ou null, je mets les 2
+        if(map[x_cur + "/" + y_cur] != undefined && map[x_cur + "/" + y_cur] != null) {
+          //console.log("on est sur une vraie tile")
+          //Est-ce que l'id est dans forbidden_IDs ?
+          let cur_id = map[x_cur + "/" + y_cur].tile_id;
+          //console.log("on est sur",cur_id)
+          if(forbidden_IDs.includes(cur_id)) return;
+          //console.log("on est sur une bonne tile")
+        }
+        //C long
+        if(nb_iter > 10) return;
+        //console.log("c'est pas trop long")
+        nb_iter++;
+      }
+      //console.log("on s'en sort")
+
     }
     players[socket.id].time_last_mvt = Date.now()
     players[socket.id].x = data.x
@@ -887,7 +964,9 @@ io.on('connection', (socket) => {
     }
     if(data.type == "dropItem"){
       if(!connected_players[data.player].inventory) return;
-      
+      console.log("ça essaye de jeter")
+      console.log("On a", data.item_type)
+      console.log("L'inv est", connected_players[data.player].inventory)
       let item_id = -1;
       Object.keys(connected_players[data.player].inventory).forEach(i => {
         if(connected_players[data.player].inventory[i] == data.item_type) {
@@ -895,11 +974,13 @@ io.on('connection', (socket) => {
           item_id = i;
         }
       })
+      console.log("On a trouvé du wood à l'indice", item_id)
       if(item_id == -1) return;
       //On regarde si on complète une task avec
       if(players[data.player].tasks != null)
         Object.values(players[data.player].tasks).forEach(val => {
-          if(val.name == T_THROW_RES && !val.completed){
+          console.log("La task actuelle est", val.name)
+          if((val.name == T_THROW_RES || val.name == T_SET_ONFIRE) && !val.completed){
             val.qte--;
             if(val.qte == 0){ 
               val.completed = true
@@ -990,10 +1071,12 @@ io.on('connection', (socket) => {
       delete players[socket.id];
       delete socketId_socket[socket.id];
 
+      let rooms_to_del = [];
+
       //Accessoirement on l'enlève des rooms QUE si la partie n'a pas commencée
       Object.keys(rooms).forEach(room_id => {
         let room = rooms[room_id]
-        if(room.launched) return;
+        if(room.launched == true) return;
         let id = -1;
         Object.keys(room.players).forEach(c_id => {
           if(room.players[c_id].socketId == socket.id)
@@ -1007,7 +1090,13 @@ io.on('connection', (socket) => {
           room_players.push(val.player);
         })
         io.to(room_id+"/lobby").emit("players", room_players)
+        if(rooms[room_id].players.length == 0) rooms_to_del;
       })
+
+      rooms_to_del.forEach((val, id) => {
+        delete rooms[val]
+      })
+
 
         //delete connected_players[socket.id];
         //io.emit('positions', players); // Mettre à jour la liste pour tous

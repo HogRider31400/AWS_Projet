@@ -12,10 +12,12 @@
         <header>
             <nav>
                 <div class="logo">
-                    <img src="/static/site/images/logo.png" alt="Logo" class="logo-icon">
                     <span>Lost Island</span>
                 </div>
-                <div class="nav-links" :class="{ 'active': isMenuOpen }">
+                <div class="nav-links">
+                    <a href="/" class="nav-link">
+                        Accueil
+                    </a>
                     <a href="regle" class="nav-link">
                         <img src="/static/site/images/book-solid.svg" alt="Rules" class="nav-icon">
                         Règles
@@ -29,16 +31,13 @@
                         Inscription
                     </a>
                 </div>
-                <button class="menu-toggle" @click="toggleMenu">
-                    <img src="/static/site/images/bars-solid.svg" alt="Menu" class="nav-icon">
-                </button>
             </nav>
         </header>
 
         <main class="centre">
             <div class="centre-content">
                 <h1>Bienvenue sur Lost Island</h1>
-                <p>Explorez un monde mystérieux rempli d'aventures et de défis. Survivez, construisez votre bateau pour s'échapper de l'île..</p>
+                <p>Explorez un monde mystérieux rempli d'aventures et de défis. Survivez et attendez les secours...</p>
                 <button class="cta-button">Commencer l'aventure</button>
             </div>
         </main>

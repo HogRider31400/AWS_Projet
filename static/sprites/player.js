@@ -2,7 +2,7 @@ import { getImpostorTasks, getPlayerTasks } from "../tasks.js";
 import { Chest } from "./chest.js"
 
 export class Player extends Phaser.GameObjects.Sprite {
-    constructor (scene, x, y, active, role = "player", id = -1)
+    constructor (scene, x, y, active, role = "player", id = -1, pseudo = "slt")
     {
         super(scene, x, y, 'player', 0);
         this.scene = scene;
@@ -53,7 +53,8 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.cursors = scene.input.keyboard.createCursorKeys();
         this.keyA = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         this.keyD = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-        this.keyT = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.T);
+        this.keyB = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.B);
+        this.keyW = scene.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
 
         this.moveSpeed = 200;
         this.last_sent = 10000;
@@ -81,7 +82,7 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.sounds.sand_sound.loop = true;
         this.sounds.sand_sound.rate = 5
 
-
+        this.playerName = null
         scene.physics.world.enable(this);
 
         this.canInteract = false; //On met à false quand on peut pas, si on peut alors on a le nom de l'objet (?)
@@ -138,6 +139,16 @@ export class Player extends Phaser.GameObjects.Sprite {
         //Update de joueur non actif
         if(this.isActive == false){
             this.applyMovement();
+            if(this.playerName == null && this.pseudo != null){
+                console.log("on fait enfin le follower")
+                this.playerName = this.scene.add.text(0, 0, this.pseudo,
+                    {
+                        fontSize : '12px'
+                    }
+                );
+            }
+            if(this.playerName != null)
+                this.playerName.setPosition(this.x - 50, this.y - 50);
             return;
         }
 
@@ -178,7 +189,6 @@ export class Player extends Phaser.GameObjects.Sprite {
         }
 
         this.applyMovement();
-
         //Si il est mort, tout ce qui reste n'est plus à exécuter
         if(this.ghost) return;
 
@@ -275,7 +285,6 @@ export class Player extends Phaser.GameObjects.Sprite {
                 console.log("Interaction entre humains. Il le tue.");
                 if (this.actions.killByKnife) {
                     this.actions.killByKnife(this.canInteract.id);
-
                 }
             }
         }
@@ -283,14 +292,22 @@ export class Player extends Phaser.GameObjects.Sprite {
 
     onWaterCollision() {
         console.log("L'imposteur essaie de jeter un objet dans l'eau !", this.inventory);
-        if (Phaser.Input.Keyboard.JustDown(this.keyT)) {
-            this.tasks.throwItem(this);
+        if (Phaser.Input.Keyboard.JustDown(this.keyB)) {
+            this.tasks.throwItem(this, "berryBush");
+            this.actions.throwItem("berry")
+        } else if (Phaser.Input.Keyboard.JustDown(this.keyW)) {
+            this.tasks.throwItem(this, "woodPile");
+            this.actions.throwItem("wood")
         }
     }
     fireCollision() {
         console.log("L'imposteur essaie de jeter un objet dans le feu !", this.inventory);
-        if (Phaser.Input.Keyboard.JustDown(this.keyT)) {
-            this.tasks.throwItem(this);
+        if (Phaser.Input.Keyboard.JustDown(this.keyB)) {
+            this.tasks.throwItem(this, "berryBush");
+            this.actions.throwItem("berry")
+        } else if (Phaser.Input.Keyboard.JustDown(this.keyW)) {
+            this.tasks.throwItem(this, "woodPile");
+            this.actions.throwItem("wood")
         }
     }
 

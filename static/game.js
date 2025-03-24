@@ -56,7 +56,7 @@ function openVote(otherPlayers){
   console.log(otherPlayers)
   Object.values(otherPlayers).forEach(val => {
     const curP = document.createElement("option")
-    curP.innerText = val.id
+    curP.innerText = val.pseudo
     curP.value = val.id
     console.log("une val")
     console.log(curP)
@@ -94,7 +94,7 @@ var game = new Phaser.Game(config)
   function create () {
 
     // On init le joueur avant tout
-    this.player = new Player(this, 500,500, true, "impostor")
+    this.player = new Player(this, 500,500, true, "impostor", -1, "")
     player = this.player;
     
     this.map = this.add.tilemap('map')
@@ -391,12 +391,11 @@ var game = new Phaser.Game(config)
         });
     });
   
-    
     this.player.onAction('dropItem', (item) => {
       socket.emit('action', {
         type : 'dropItem', //drop n'importe quel item
-        item_type : item.type,
-        item_id : item.id, //id de n'importe quel objet
+        item_type : item,
+        item_id : -1, //id de n'importe quel objet
         player : socket.id
       })
       console.log("onAction : dropItem");
@@ -405,8 +404,8 @@ var game = new Phaser.Game(config)
     this.player.onAction('openChest', (chest_id) => {
       const items = [
         { type: 'seau', id: '1' },
-        //{ type: 'couteau', id: '2' },
-        //{ type: 'hache', id: '3' }
+        { type: 'couteau', id: '2' },
+        { type: 'hache', id: '3' }
       ];
       const randomIndex = Math.floor(Math.random() * items.length);
       const item = items[randomIndex];
@@ -434,6 +433,16 @@ var game = new Phaser.Game(config)
         player : socket.id
       })
       console.log("onAction : fillBucket");
+    })
+
+    this.player.onAction('throwItem', (item) => {
+      socket.emit('action', {
+        type : 'dropItem', //drop n'importe quel item
+        item_type : item,
+        item_id : -1, //id de n'importe quel objet
+        player : socket.id
+      })
+      console.log("onAction : dropItem");
     })
 
     this.player.onAction('killByKnife', (victim_i) => {
@@ -597,6 +606,10 @@ app.mount("#app");
 
         if (otherPlayers[id]) {
             const otherPlayer = otherPlayers[id];
+            if(otherPlayer.pseudo == null && playersData[id].pseudo != undefined){
+              console.log("on a un joueur avec comme pseudo :", playersData[id].pseudo)
+              otherPlayer.pseudo = playersData[id].pseudo
+            }
             const newX = playersData[id].x;
             const newY = playersData[id].y;
             const newDirection = playersData[id].direction;
@@ -612,22 +625,27 @@ app.mount("#app");
             otherPlayer.direction = newDirection;
 
           } else {
-            const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false, "player", id)
+            const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false, "player", id, playersData[id].pseudo)
             console.log(otherPlayer.id)
-            scene.elements.push(otherPlayer); //player doit interagir avec otherplayer
-            scene.add.existing(otherPlayer);
-            console.log("on ajoute joueur et on a " + otherPlayer.active)
+            
+            console.log("on ajoute joueur et on a " + otherPlayer.pseudo)
             otherPlayer.oldX = playersData[id].x;
             otherPlayer.oldY = playersData[id].y;
             //otherPlayer.anims.play(playersData[id].direction, true);
             otherPlayers[id] = otherPlayer;
             for(let elem_i of scene.elements) {
-              scene.physics.add.collider(otherPlayer, scene.elements[elem_i])
+              console.log(elem_i)
+              if(elem_i.type != "human")
+                scene.physics.add.collider(elem_i, otherPlayer, () => {})
             }
             scene.physics.add.collider(
               otherPlayer,
-              scene.layerEau
+              scene.layerEau,
+              () => {}
             );
+            scene.add.existing(otherPlayer);
+            scene.elements.push(otherPlayer); //player doit interagir avec otherplayer
+            
         }
       }
     }
