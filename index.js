@@ -497,12 +497,12 @@ const tasks = {
     {
       name : T_THROW_RES,
       item_type : "any",
-      qte : 3
+      qte : 1
     },
     {
       name : T_SET_ONFIRE,
       item_type : "any",
-      qte : 3
+      qte : 1
     },
     // {
     //   name : T_EQUIP_KNIFE,
@@ -845,19 +845,19 @@ io.on('connection', (socket) => {
         //Est-ce qu'on passe par le vide ?
         //Le pire c'est que je sais même pas si c undefined ou null, je mets les 2
         if(map[x_cur + "/" + y_cur] != undefined && map[x_cur + "/" + y_cur] != null) {
-          console.log("on est sur une vraie tile")
+          //console.log("on est sur une vraie tile")
           //Est-ce que l'id est dans forbidden_IDs ?
           let cur_id = map[x_cur + "/" + y_cur].tile_id;
-          console.log("on est sur",cur_id)
+          //console.log("on est sur",cur_id)
           if(forbidden_IDs.includes(cur_id)) return;
-          console.log("on est sur une bonne tile")
+          //console.log("on est sur une bonne tile")
         }
         //C long
         if(nb_iter > 10) return;
-        console.log("c'est pas trop long")
+        //console.log("c'est pas trop long")
         nb_iter++;
       }
-      console.log("on s'en sort")
+      //console.log("on s'en sort")
 
     }
     players[socket.id].time_last_mvt = Date.now()
@@ -964,7 +964,9 @@ io.on('connection', (socket) => {
     }
     if(data.type == "dropItem"){
       if(!connected_players[data.player].inventory) return;
-      
+      console.log("ça essaye de jeter")
+      console.log("On a", data.item_type)
+      console.log("L'inv est", connected_players[data.player].inventory)
       let item_id = -1;
       Object.keys(connected_players[data.player].inventory).forEach(i => {
         if(connected_players[data.player].inventory[i] == data.item_type) {
@@ -972,11 +974,13 @@ io.on('connection', (socket) => {
           item_id = i;
         }
       })
+      console.log("On a trouvé du wood à l'indice", item_id)
       if(item_id == -1) return;
       //On regarde si on complète une task avec
       if(players[data.player].tasks != null)
         Object.values(players[data.player].tasks).forEach(val => {
-          if(val.name == T_THROW_RES && !val.completed){
+          console.log("La task actuelle est", val.name)
+          if((val.name == T_THROW_RES || val.name == T_SET_ONFIRE) && !val.completed){
             val.qte--;
             if(val.qte == 0){ 
               val.completed = true

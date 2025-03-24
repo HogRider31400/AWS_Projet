@@ -394,8 +394,8 @@ var game = new Phaser.Game(config)
     this.player.onAction('dropItem', (item) => {
       socket.emit('action', {
         type : 'dropItem', //drop n'importe quel item
-        item_type : item.type,
-        item_id : item.id, //id de n'importe quel objet
+        item_type : item,
+        item_id : -1, //id de n'importe quel objet
         player : socket.id
       })
       console.log("onAction : dropItem");
@@ -435,12 +435,14 @@ var game = new Phaser.Game(config)
       console.log("onAction : fillBucket");
     })
 
-    this.player.onAction('throwItem', () => {
+    this.player.onAction('throwItem', (item) => {
       socket.emit('action', {
-        type : 't_throw_res',
+        type : 'dropItem', //drop n'importe quel item
+        item_type : item,
+        item_id : -1, //id de n'importe quel objet
         player : socket.id
       })
-      console.log("onAction : throwItem");
+      console.log("onAction : dropItem");
     })
 
     this.player.onAction('killByKnife', (victim_i) => {
@@ -625,20 +627,25 @@ app.mount("#app");
           } else {
             const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false, "player", id, playersData[id].pseudo)
             console.log(otherPlayer.id)
-            scene.elements.push(otherPlayer); //player doit interagir avec otherplayer
-            scene.add.existing(otherPlayer);
+            
             console.log("on ajoute joueur et on a " + otherPlayer.pseudo)
             otherPlayer.oldX = playersData[id].x;
             otherPlayer.oldY = playersData[id].y;
             //otherPlayer.anims.play(playersData[id].direction, true);
             otherPlayers[id] = otherPlayer;
             for(let elem_i of scene.elements) {
-              scene.physics.add.collider(otherPlayer, scene.elements[elem_i])
+              console.log(elem_i)
+              if(elem_i.type != "human")
+                scene.physics.add.collider(elem_i, otherPlayer, () => {})
             }
             scene.physics.add.collider(
               otherPlayer,
-              scene.layerEau
+              scene.layerEau,
+              () => {}
             );
+            scene.add.existing(otherPlayer);
+            scene.elements.push(otherPlayer); //player doit interagir avec otherplayer
+            
         }
       }
     }

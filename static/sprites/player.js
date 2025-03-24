@@ -293,21 +293,21 @@ export class Player extends Phaser.GameObjects.Sprite {
     onWaterCollision() {
         console.log("L'imposteur essaie de jeter un objet dans l'eau !", this.inventory);
         if (Phaser.Input.Keyboard.JustDown(this.keyB)) {
-            this.tasks.throwItem(this, "berry");
-            this.actions.throwItem()
+            this.tasks.throwItem(this, "berryBush");
+            this.actions.throwItem("berry")
         } else if (Phaser.Input.Keyboard.JustDown(this.keyW)) {
-            this.tasks.throwItem(this, "wood");
-            this.actions.throwItem()
+            this.tasks.throwItem(this, "woodPile");
+            this.actions.throwItem("wood")
         }
     }
     fireCollision() {
         console.log("L'imposteur essaie de jeter un objet dans le feu !", this.inventory);
         if (Phaser.Input.Keyboard.JustDown(this.keyB)) {
             this.tasks.throwItem(this, "berryBush");
-            this.actions.throwItem()
+            this.actions.throwItem("berry")
         } else if (Phaser.Input.Keyboard.JustDown(this.keyW)) {
             this.tasks.throwItem(this, "woodPile");
-            this.actions.throwItem()
+            this.actions.throwItem("wood")
         }
     }
 
