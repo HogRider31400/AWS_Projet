@@ -56,7 +56,7 @@ function openVote(otherPlayers){
   console.log(otherPlayers)
   Object.values(otherPlayers).forEach(val => {
     const curP = document.createElement("option")
-    curP.innerText = val.id
+    curP.innerText = val.pseudo
     curP.value = val.id
     console.log("une val")
     console.log(curP)
@@ -94,7 +94,7 @@ var game = new Phaser.Game(config)
   function create () {
 
     // On init le joueur avant tout
-    this.player = new Player(this, 500,500, true, "impostor")
+    this.player = new Player(this, 500,500, true, "impostor", -1, "")
     player = this.player;
     
     this.map = this.add.tilemap('map')
@@ -597,6 +597,10 @@ app.mount("#app");
 
         if (otherPlayers[id]) {
             const otherPlayer = otherPlayers[id];
+            if(otherPlayer.pseudo == null && playersData[id].pseudo != undefined){
+              console.log("on a un joueur avec comme pseudo :", playersData[id].pseudo)
+              otherPlayer.pseudo = playersData[id].pseudo
+            }
             const newX = playersData[id].x;
             const newY = playersData[id].y;
             const newDirection = playersData[id].direction;
@@ -612,11 +616,11 @@ app.mount("#app");
             otherPlayer.direction = newDirection;
 
           } else {
-            const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false, "player", id)
+            const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false, "player", id, playersData[id].pseudo)
             console.log(otherPlayer.id)
             scene.elements.push(otherPlayer); //player doit interagir avec otherplayer
             scene.add.existing(otherPlayer);
-            console.log("on ajoute joueur et on a " + otherPlayer.active)
+            console.log("on ajoute joueur et on a " + otherPlayer.pseudo)
             otherPlayer.oldX = playersData[id].x;
             otherPlayer.oldY = playersData[id].y;
             //otherPlayer.anims.play(playersData[id].direction, true);

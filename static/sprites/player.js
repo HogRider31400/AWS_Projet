@@ -2,7 +2,7 @@ import { getImpostorTasks, getPlayerTasks } from "../tasks.js";
 import { Chest } from "./chest.js"
 
 export class Player extends Phaser.GameObjects.Sprite {
-    constructor (scene, x, y, active, role = "player", id = -1)
+    constructor (scene, x, y, active, role = "player", id = -1, pseudo = "slt")
     {
         super(scene, x, y, 'player', 0);
         this.scene = scene;
@@ -81,7 +81,7 @@ export class Player extends Phaser.GameObjects.Sprite {
         this.sounds.sand_sound.loop = true;
         this.sounds.sand_sound.rate = 5
 
-
+        this.playerName = null
         scene.physics.world.enable(this);
 
         this.canInteract = false; //On met à false quand on peut pas, si on peut alors on a le nom de l'objet (?)
@@ -138,6 +138,16 @@ export class Player extends Phaser.GameObjects.Sprite {
         //Update de joueur non actif
         if(this.isActive == false){
             this.applyMovement();
+            if(this.playerName == null && this.pseudo != null){
+                console.log("on fait enfin le follower")
+                this.playerName = this.scene.add.text(0, 0, this.pseudo,
+                    {
+                        fontSize : '12px'
+                    }
+                );
+            }
+            if(this.playerName != null)
+                this.playerName.setPosition(this.x - 50, this.y - 50);
             return;
         }
 
@@ -178,7 +188,6 @@ export class Player extends Phaser.GameObjects.Sprite {
         }
 
         this.applyMovement();
-
         //Si il est mort, tout ce qui reste n'est plus à exécuter
         if(this.ghost) return;
 

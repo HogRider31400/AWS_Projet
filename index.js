@@ -301,10 +301,12 @@ app.post("/connect_to_game", async (req,res) => {
   //On récup sa room !!
   console.log("ça essaye2")
   let room_id = null;
+  let pseudo = null
   Object.keys(rooms).forEach(id => {
     Object.values(rooms[id].players).forEach(val => {
       if(val.token == req.cookies.token){
         room_id = id;
+        pseudo = val.player
       }
     })
   })
@@ -326,6 +328,8 @@ app.post("/connect_to_game", async (req,res) => {
   })
   connected_players[socketId].socket.join(room_id+"/game")
   connected_players[socketId].room_id = room_id;
+  players[socketId].pseudo = pseudo
+  console.log("il c co et il a", pseudo)
   if(other_id){
     let o = connected_players[other_id];
     connected_players[socketId].inventory = o.inventory
@@ -354,6 +358,7 @@ app.post("/connect_to_game", async (req,res) => {
       inventory : connected_players[socketId].inventory,
       map: map,
       started : game_started[room_id],
+      pseudo : pseudo,
       tasks : players[socketId].tasks,
       pos : { x : players[socketId].x, y : players[socketId].y},
       role : players[socketId].role,
@@ -367,6 +372,7 @@ app.post("/connect_to_game", async (req,res) => {
     map: map,
     position : null,
     tasks : null,
+    pseudo : pseudo,
     started : null,
     pos : { x : players[socketId].x, y : players[socketId].y},
     role : players[socketId].role,
