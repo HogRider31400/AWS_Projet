@@ -312,7 +312,6 @@ var game = new Phaser.Game(config)
         });
     });
   
-    
     this.player.onAction('dropItem', (item) => {
       socket.emit('action', {
         type : 'dropItem', //drop n'importe quel item
@@ -325,7 +324,7 @@ var game = new Phaser.Game(config)
 
     this.player.onAction('openChest', (chest_id) => {
       const items = [
-        { type: 'sceau', id: '1' },
+        { type: 'seau', id: '1' },
         { type: 'couteau', id: '2' },
         { type: 'hache', id: '3' }
       ];
@@ -355,6 +354,14 @@ var game = new Phaser.Game(config)
         player : socket.id
       })
       console.log("onAction : fillBucket");
+    })
+
+    this.player.onAction('throwItem', () => {
+      socket.emit('action', {
+        type : 't_throw_res',
+        player : socket.id
+      })
+      console.log("onAction : throwItem");
     })
 
     this.player.onAction('killByKnife', (victim_i) => {

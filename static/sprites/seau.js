@@ -1,8 +1,8 @@
-export class Hache extends Phaser.GameObjects.Sprite {
+export class Seau extends Phaser.GameObjects.Sprite {
     constructor (scene, x, y, id, tile) {
         super(scene, x, y)
         this.id = id;
-        this.type = "hache"
+        this.type = "seau"
         this.tile = tile;
 
         this.setPosition(x, y);
