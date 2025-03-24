@@ -1015,6 +1015,8 @@ io.on('connection', (socket) => {
       delete players[socket.id];
       delete socketId_socket[socket.id];
 
+      let rooms_to_del = [];
+
       //Accessoirement on l'enlève des rooms QUE si la partie n'a pas commencée
       Object.keys(rooms).forEach(room_id => {
         let room = rooms[room_id]
@@ -1032,7 +1034,13 @@ io.on('connection', (socket) => {
           room_players.push(val.player);
         })
         io.to(room_id+"/lobby").emit("players", room_players)
+        if(rooms[room_id].players.length == 0) rooms_to_del;
       })
+
+      rooms_to_del.forEach((val, id) => {
+        delete rooms[val]
+      })
+
 
         //delete connected_players[socket.id];
         //io.emit('positions', players); // Mettre à jour la liste pour tous
