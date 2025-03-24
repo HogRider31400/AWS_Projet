@@ -293,11 +293,13 @@ function get_alive_players(room_id, no_traitre=false){
 connected_players = {}
 old_players = {}
 app.post("/connect_to_game", async (req,res) => {
+  console.log("ça essaye")
   if(!await isConnected(req)) {
     res.status(400).json({ error: "Token inconnu ou trop ancien." });
     return;
   }
   //On récup sa room !!
+  console.log("ça essaye2")
   let room_id = null;
   Object.keys(rooms).forEach(id => {
     Object.values(rooms[id].players).forEach(val => {
@@ -553,6 +555,7 @@ function end_game(room_id, ending=0){
     side : side
   })
   rooms[room_id].game_started = false;
+  rooms[room_id].launched = false;
 }
 
 async function launch_game(room_id){
@@ -720,6 +723,7 @@ async function launch_game(room_id){
       players[player_id].alive = false
       if(players[player_id].role == "Traître"){
         end_game(room_id,)
+        return
       }
     }
 
@@ -993,7 +997,7 @@ io.on('connection', (socket) => {
       //Accessoirement on l'enlève des rooms QUE si la partie n'a pas commencée
       Object.keys(rooms).forEach(room_id => {
         let room = rooms[room_id]
-        if(room.launched) return;
+        if(room.launched == true) return;
         let id = -1;
         Object.keys(room.players).forEach(c_id => {
           if(room.players[c_id].socketId == socket.id)
