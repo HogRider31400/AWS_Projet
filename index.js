@@ -562,6 +562,21 @@ function end_game(room_id, ending=0){
   })
   rooms[room_id].game_started = false;
   rooms[room_id].launched = false;
+
+  let to_del = []
+
+  Object.values(rooms[room_id].players).forEach(val => {
+    Object.keys(connected_players).forEach(id => {
+      if(connected_players[id].token == val.token)
+        to_del.push(id)
+    })
+  })
+
+  to_del.forEach((val, i) =>{
+    delete connected_players[val]
+  })
+
+  delete rooms[room_id]
 }
 
 async function launch_game(room_id){
