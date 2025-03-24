@@ -24,6 +24,46 @@ var config = {
     }
   }
 
+function renderTasks() {
+  const tasks = JSON.parse(localStorage.getItem("tasks")) || [];
+  const taskListDiv = document.getElementById('task-list');
+  taskListDiv.innerHTML = ''; // Vider la liste actuelle
+
+  tasks.forEach((task, index) => {
+      const taskDiv = document.createElement('div');
+      taskDiv.classList.add('task');
+
+      if (task.completed) {
+          taskDiv.classList.add('completed'); // Barrer si terminé ( cette ligne concerne quand la tache terminé) 
+      }
+
+      const checkboxSpan = document.createElement('span');
+      checkboxSpan.textContent = task.completed ? '✔' : '';
+
+
+      taskDiv.appendChild(checkboxSpan);
+      taskDiv.appendChild(document.createTextNode(task.name));
+      taskListDiv.appendChild(taskDiv);
+  });
+}
+
+function openVote(otherPlayers){
+  const modal = document.getElementById("voteModal")
+  modal.showModal()
+  const playersOpt = document.getElementById("playersVote")
+  playersOpt.innerHTML = "";
+  console.log("salut")
+  console.log(otherPlayers)
+  Object.values(otherPlayers).forEach(val => {
+    const curP = document.createElement("option")
+    curP.innerText = val.pseudo
+    curP.value = val.id
+    console.log("une val")
+    console.log(curP)
+    playersOpt.appendChild(curP)
+  })
+}
+
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const socket = await io();
 window.socket = socket;
@@ -54,7 +94,7 @@ var game = new Phaser.Game(config)
   function create () {
 
     // On init le joueur avant tout
-    this.player = new Player(this, 500,500, true, "impostor")
+    this.player = new Player(this, 500,500, true, "impostor", -1, "")
     player = this.player;
     
     this.map = this.add.tilemap('map')
@@ -170,6 +210,12 @@ var game = new Phaser.Game(config)
         console.log(pos.x, pos.y, "aouuu")
         this.player.x = pos.x
         this.player.y = pos.y
+        if(data.inventory)
+          this.player.inventory = data.inventory
+        const tasks = data.tasks || [];
+        localStorage.setItem('tasks', JSON.stringify(data.tasks)); // ici on Sauvegarde les taches recu de  serv dans le localStorage
+        renderTasks();
+        document.getElementById("role").innerHTML = "Votre rôle est : " + data.role;
         console.log(data.tasks)
         if(started)
           this.game_started = true;
@@ -182,14 +228,27 @@ var game = new Phaser.Game(config)
             elem.isNowDepleted();
           })
         })
+
+  
       }
       if(data.type == "remove_player"){
         if(!data.id) return;
         console.log("Faut remove le joueur " + data.id, "après je crois c déjà fait")
         //On met le mode spectateur sur le joueur si il est mort
-        if(data.id != socket.id) return;
+        if(data.id != socket.id) {
+          console.log(otherPlayers[data.id])
+          otherPlayers[data.id].destroy()
+          delete otherPlayers[data.id]
+          
+          return
+        };
         this.player.ghost = true;
-        this.player.tint = 0xF8F7ED
+        this.player.tint = 0xFF0000
+        this.player.interactionIndicator.visible = true;
+        this.player.interactionIndicator2.visible = false;
+        this.player.square.x = -1
+        this.player.square.y = -1
+        console.log("ct nous !!")
       }
       if(data.type == "broadcast") {
         console.log("On a reçu : " + data.message)
@@ -199,29 +258,32 @@ var game = new Phaser.Game(config)
       if(data.type == "assign_role") {
         //Ici data.role c'est soit Traître soit Survivant
         console.log("Vous avez été assigné le rôle : " + data.role)
+        document.getElementById("role").innerHTML = "Votre rôle est : " + data.role;
       }
       if(data.type == "assign_tasks") {
         console.log("Vous avez reçu les tâches suivantes")
         console.log(data.tasks)
+        localStorage.setItem('tasks', JSON.stringify(data.tasks)); // ici on Sauvegarde les taches recu de  serv dans le localStorage
+        renderTasks(); // puis ici on Met à jour l'affichage
       }
       if(data.type == "completed_task") {
+        const tasks = JSON.parse(localStorage.getItem("tasks"))
         console.log("Vous avez complété : " + data.name)
+        Object.values(tasks).forEach(val => {
+          if(val.name == data.name) val.completed = true;
+        })
+        //tasks[data.name].completed = true;
+        localStorage.setItem('tasks', JSON.stringify(tasks));
+        renderTasks();
       }
       if(data.type == "end_game") {
-        if(side == "Survivant"){
+        document.getElementById("voteModal").close()
+        if(data.side == "Survivant"){
           const sModal = document.getElementById("sWin");
-          const rButton = document.getElementById("retourIndex1");
-          rButton.addEventListener("click", () => {
-            document.location.href = "/"
-          })
           sModal.showModal();
         }
         else {
           const tModal = document.getElementById("tWin");
-          const rButton = document.getElementById("retourIndex2");
-          rButton.addEventListener("click", () => {
-            document.location.href = "/"
-          })
           tModal.showModal();
         }
       }
@@ -229,9 +291,11 @@ var game = new Phaser.Game(config)
         console.log("On a reçu des infos sur le temps")
         if(data.time == "day"){
           console.log("C'est le jour " + data.cur_day)
+          document.getElementById("voteModal").close()
         }
         if(data.time == "night"){
           console.log("C'est la nuit " + data.cur_night)
+          openVote(otherPlayers)
           //Ici on doit s'occuper de faire en sorte que les gens votent
         }
       }
@@ -242,10 +306,25 @@ var game = new Phaser.Game(config)
 
 
     socket.on('positions', (data) => {
+      window.playersData = data;
       playersData = data;
       //console.log(data);
       updateOtherPlayers(this);
     });
+
+    //On init le bouton
+    const btn = document.getElementById("voteBtn")
+    btn.addEventListener('click', () => {
+      const voteV = document.getElementById('playersVote').value;
+      console.log("ça vote " + voteV)
+      socket.emit("action", {
+        type: "vote",
+        vote: voteV,
+        player: socket.id
+      });
+      document.getElementById("voteModal").close()
+    })
+
 
     socket.on('action', (data) => {
       /*
@@ -339,7 +418,7 @@ var game = new Phaser.Game(config)
 
       socket.emit('open_chest', { 
         type : 'openChest',
-        item_type : items.type,
+        item_type : item.type,
         item_id : chest_id,
         player: socket.id 
       });
@@ -483,6 +562,10 @@ var game = new Phaser.Game(config)
   }
 
 //Vue.js pour gérer la chatbox
+
+const roomData = JSON.parse(localStorage.getItem("roomData")) || {};
+const playerName = roomData.pseudo || "Joueur"; //  on récuper le pseudo
+
 const app = Vue.createApp({
   data() {
       return {
@@ -492,6 +575,11 @@ const app = Vue.createApp({
   },
   methods: {
       sendMessage() {
+          if (!socket) {
+              console.error("Socket.io non initialisé !");
+              return;
+          }
+
           if (this.newMessage.trim() !== "") {
               socket.emit("chat-message", { player: playerName, message: this.newMessage });
               this.newMessage = "";
@@ -516,6 +604,10 @@ app.mount("#app");
 
         if (otherPlayers[id]) {
             const otherPlayer = otherPlayers[id];
+            if(otherPlayer.pseudo == null && playersData[id].pseudo != undefined){
+              console.log("on a un joueur avec comme pseudo :", playersData[id].pseudo)
+              otherPlayer.pseudo = playersData[id].pseudo
+            }
             const newX = playersData[id].x;
             const newY = playersData[id].y;
             const newDirection = playersData[id].direction;
@@ -531,11 +623,11 @@ app.mount("#app");
             otherPlayer.direction = newDirection;
 
           } else {
-            const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false)
-            console.log(otherPlayer)
-            scene.elements.push(this.otherPlayer); //player doit interagir avec otherplayer
+            const otherPlayer = new Player(scene, playersData[id].x, playersData[id].y, false, "player", id, playersData[id].pseudo)
+            console.log(otherPlayer.id)
+            scene.elements.push(otherPlayer); //player doit interagir avec otherplayer
             scene.add.existing(otherPlayer);
-            console.log("on ajoute joueur et on a " + otherPlayer.active)
+            console.log("on ajoute joueur et on a " + otherPlayer.pseudo)
             otherPlayer.oldX = playersData[id].x;
             otherPlayer.oldY = playersData[id].y;
             //otherPlayer.anims.play(playersData[id].direction, true);

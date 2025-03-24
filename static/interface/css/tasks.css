@@ -7,55 +7,31 @@
     z-index: 4;
     padding: 10px;
   }
+
+.task-list {
+  padding: 10px;
+  display : block;
+  background : rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
   
-  .toggle-button {
-    width: 100%;
-    padding: 10px 20px;
-    background: #3498db;
-    border: none;
-    color: white;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
+.task {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  cursor: pointer;
+  color: white;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #ddd;
+}
   
-  .toggle-button:hover {
-    background: #2980b9;
-  }
+.task:hover {
+  background: #34495e;
+}
   
-  .task-list {
-    padding: 10px;
-  }
-  
-  .task {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px;
-    cursor: pointer;
-    color: white;
-    transition: background-color 0.2s;
-    border-bottom: 1px solid #ddd;
-  }
-  
-  .task:hover {
-    background: #34495e;
-  }
-  
-  .checkbox {
-    width: 20px;
-    height: 20px;
-    border: 2px solid white;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-  }
-  
-  .task.completed {
-    opacity: 0.7;
-    text-decoration: line-through;
-  }
+.task.completed {
+  opacity: 0.7;
+  text-decoration: line-through;
+}
   

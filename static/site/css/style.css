@@ -90,15 +90,6 @@ nav {
     color: white;
 }
 
-.centre::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.4);
-}
 
 .centre-content {
     position: relative;
@@ -133,6 +124,31 @@ nav {
 
 .cta-button:hover {
     background-color: #059669;
+}
+
+h1 {
+    color: #42b883;
+    text-align: center;
+    font-size: 2.5em;
+    margin-bottom: 2rem;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+h2 {
+    color: #ffffff;
+    border-bottom: 2px solid #42b883;
+    padding-bottom: 0.5rem;
+    margin-top: 2rem;
+}
+.cta-button {
+    display: inline-block;
+    background-color: #42b883;
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 6px;
+    text-decoration: none;
+    margin-top: 2rem;
+    transition: background-color 0.3s ease;
 }
 
 /* Menu secondaire quand il clique sur menu */

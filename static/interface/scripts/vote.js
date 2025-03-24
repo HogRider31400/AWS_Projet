@@ -1,32 +1,43 @@
+document.addEventListener("DOMContentLoaded", function () {
+  const voteModal = document.getElementById("voteModal");
+  const voteOptions = document.getElementById("voteOptions");
+  const submitVote = document.getElementById("submitVote");
+  const closeVoteModal = document.getElementById("closeVoteModal");
 
-function showVoteModal(players) {
-    const modal = document.getElementById('voteModal');
-    const playersList = document.getElementById('playersList');
-    playersList.innerHTML = "";
+  let selectedPlayerId = null;
+
+  function showVoteModal(players) {
+    voteOptions.innerHTML = ""; 
     players.forEach(player => {
-      let btn = document.createElement('button');
-      btn.innerText = player.name; 
-      btn.onclick = function() {
-        socket.emit('action', {
-          type: 'vote',
-          vote: player.socketId,
-          player: socket.id  
-        });
-        modal.style.display = 'none';
-      };
-      playersList.appendChild(btn);
+      const label = document.createElement("label");
+      const radio = document.createElement("input");
+      radio.type = "radio";
+      radio.name = "vote";
+      radio.value = player.id;
+      radio.addEventListener("change", () => {
+        selectedPlayerId = player.id;
+      });
+      label.appendChild(radio);
+      label.appendChild(document.createTextNode(player.name));
+      voteOptions.appendChild(label);
     });
-    modal.style.display = 'block';
+
+    voteModal.style.display = "flex";
   }
-  
-  document.getElementById('cancelVote').onclick = function() {
-    document.getElementById('voteModal').style.display = 'none';
-  };
-  
-  socket.on('game', (data) => {
-    if (data.type === 'set_time' && data.time === 'night') {
-  // Ici on doit ajouter un moyen de recupere la liste des joueurs dans la partie
-      showVoteModal(playersListData);
+  submitVote.addEventListener("click", () => {
+    if (selectedPlayerId) {
+      socket.emit("action", {
+        type: "vote",
+        vote: selectedPlayerId,
+        player: socket.id
+      });
+      voteModal.style.display = "none";
+    } else {
+      alert("Veuillez sélectionner un joueur à éliminer.");
     }
   });
-  
+  closeVoteModal.addEventListener("click", () => {
+    voteModal.style.display = "none";
+  });
+  //showVoteModal([{ id: "player1", name: "Joueur 1" }, { id: "player2", name: "Joueur 2" }]);
+});

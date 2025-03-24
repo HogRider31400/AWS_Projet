@@ -15,7 +15,7 @@
   
 </head>
 <body>
-  <div id="app">!
+  <div id="app">
     <div id="chat">
         <div id="messages">
             <div v-for="(msg, index) in messages" :key="index" class="message">
@@ -38,31 +38,17 @@
     </div>
   </div>
   <div id="tasks" class="task-menu">
-    <button id="toggle-button" class="toggle-button">Ouvrir les tâches</button>
-    <div id="task-list" class="task-list" style="display: none;">
+    <div id="task-list" class="task-list">
     </div>
   </div>
-  <div id="voteModal" class="modal">
-    <div class="modal-content">
-      <h2>Votez pour le traître</h2>
-      <p>Choisissez le joueur suspect :</p>
-      <div id="playersList"></div>
-      <button id="cancelVote">Annuler</button>
-    </div>
+  <div id="role" class = "role-text">
+    Votre rôle est : Survivant
   </div>
-  <div id="roleModal" class="role-modal">
-    <div class="role-modal-content">
-      <h2>Votre rôle</h2>
-      <p id="roleText"></p>
-      <button id="closeRoleModal">Fermer</button>
-    </div>
-  </div>
-
   <dialog id="tWin">
     <p>
       Le traître a gagné !
     </p>
-    <button id="retourIndex1">
+    <button id="retourIndex1" onclick="location.href='/'">
       Quitter la partie
     </button>
   </dialog>
@@ -70,8 +56,17 @@
     <p>
       Les survivants ont gagné !
     </p>
-    <button id="retourIndex2">
+    <button id="retourIndex2" onclick="location.href='/'">
       Quitter la partie
+    </button>
+  </dialog>
+  <dialog id = "voteModal">
+    <label>Choisissez pour qui voter :</label>
+    <select id="playersVote" name="players">
+    </select>
+    <br/>
+    <button id = "voteBtn">
+      Voter
     </button>
   </dialog>
   <script src="/static/interface/scripts/tasks.js"></script>
