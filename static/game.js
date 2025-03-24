@@ -180,8 +180,6 @@ var game = new Phaser.Game(config)
       this.add.existing(waterWell)
     }
 
-
-
     this.cameras.main.startFollow(this.player, true);
 
     if (this.player.role == "impostor") {
@@ -381,9 +379,20 @@ var game = new Phaser.Game(config)
       })
       console.log("onAction : pickUpWood")
     })
+
+    const slots = document.querySelectorAll('.inventory-slot');
+    slots.forEach((slot, index) => {
+        slot.addEventListener('click', () => {
+            const item = player.tasks.dropItem(player, index);
+            if (item) {
+                console.log('Action déposer un objet réalisée !');
+                player.actions.dropItem(item);
+            }
+        });
+    });
+  
     
     this.player.onAction('dropItem', (item) => {
-      //console.log("Item.type : ", item.type, " Item.id : ", item.id)
       socket.emit('action', {
         type : 'dropItem', //drop n'importe quel item
         item_type : item.type,

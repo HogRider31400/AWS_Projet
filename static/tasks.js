@@ -74,76 +74,61 @@ export function pickUpWood(player, woodPile) {
     //return player.inventory;
 }
 
-
-export function dropItem(player) {
+export function dropItem(player, index) {
 
         if (player.inventory.length > 0) {
-            const slots = document.querySelectorAll('.inventory-slot');
+            // On récupère l'objet à déposer
+            const itemToDrop = player.inventory[index]; // On enlève l'objet de l'inventaire
+            console.log("index", index)
+            //player.inventory[index] = null;
 
-            slots.forEach((slot, index) => {
-                slot.addEventListener('click', () => {
-                    // Retire la sélection des autres cases
-                    slots.forEach(s => s.classList.remove('selected'));
-                    // Ajoute la sélection à la case cliquée
-                    slot.classList.add('selected');
+            const dropTileX = Math.floor((player.x + 50) / 32); // Conversion en coordonnées de tile
+            const dropTileY = Math.floor(player.y / 32);
 
-                    // Action logique (par exemple retirer l'objet du tableau)
-                    if (player.inventory[index]) {
-                        console.log(`Objet sélectionné : ${player.inventory[index]}`);
+            //////////PARTIE CREER L'OBJET SUR LA CARTE//////////
+            //On doit refaire une tile sur le calque élément
+            const layer = player.scene.map.getLayer('elements').tilemapLayer;
 
-                    // On récupère l'objet à déposer
-                    const itemToDrop = player.inventory[index]; // On enlève l'objet de l'inventaire
-                    //player.inventory[index] = null;
+            let item; //PENSER QUE LES ID SONT DECALEES SI ON A PLS TILESET !!!
+            if (itemToDrop == "berryBush") {
+                const tile = layer.putTileAt(453, dropTileX, dropTileY);
+                tile.properties = {
+                    name: "berryBush",
+                    capacity: 5
+                };
+                item = new BerryBush(player.scene, dropTileX * 32 + 16, dropTileY * 32 + 16, dropTileY + "/" + dropTileX, layer.getTileAt(dropTileX, dropTileY));
+            } else if (itemToDrop == "woodPile") {
+                const tile = layer.putTileAt(493, dropTileX, dropTileY);
+                tile.properties = {
+                    name: "woodPile",
+                    capacity: 4
+                };
+                item = new OakPlanks(player.scene, dropTileX * 32 + 16, dropTileY * 32 + 16, dropTileY + "/" + dropTileX, layer.getTileAt(dropTileX, dropTileY));
+            }
 
-                    const dropTileX = Math.floor((player.x + 50) / 32); // Conversion en coordonnées de tile
-                    const dropTileY = Math.floor(player.y / 32);
-
-                    //////////PARTIE CREER L'OBJET SUR LA CARTE//////////
-                    //On doit refaire une tile sur le calque élément
-                    const layer = player.scene.map.getLayer('elements').tilemapLayer;
-
-                    let item; //PENSER QUE LES ID SONT DECALEES SI ON A PLS TILESET !!!
-                    if (itemToDrop == "berryBush") {
-                        const tile = layer.putTileAt(453, dropTileX, dropTileY);
-                        tile.properties = {
-                            name: "berryBush",
-                            capacity: 5
-                        };
-                        item = new BerryBush(player.scene, dropTileX * 32 + 16, dropTileY * 32 + 16, dropTileY + "/" + dropTileX, layer.getTileAt(dropTileX, dropTileY));
-                    } else if (itemToDrop == "woodPile") {
-                        const tile = layer.putTileAt(493, dropTileX, dropTileY);
-                        tile.properties = {
-                            name: "woodPile",
-                            capacity: 4
-                        };
-                        item = new OakPlanks(player.scene, dropTileX * 32 + 16, dropTileY * 32 + 16, dropTileY + "/" + dropTileX, layer.getTileAt(dropTileX, dropTileY));
-                    }
-
-                    if (item) {
-                        player.scene.elements.push(item);
-                        player.scene.physics.add.collider(player, item, function() {
-                            console.log('Collision !');
-                        });
-                        player.scene.add.existing(item);
-                    }
-                    ////////////////////////////////////////
-            
-                    /////On enlève dans l'inventaire le bon nombre d'objet en fonction de sa capacity
-                    let count = 0;
-                    player.inventory = player.inventory.filter(itemInventory => {
-                        if (itemInventory === itemToDrop && count < item.tile.properties.capacity) {
-                            count++;
-                            return false;
-                        }
-                    return true;
-                    });
-                    player.updateInventory();
-    
-                    console.log("Inventaire après dépôt :", player.inventory);
-                    return item
-                    }
+            if (item) {
+                player.scene.elements.push(item);
+                player.scene.physics.add.collider(player, item, function() {
+                    console.log('Collision !');
                 });
+                player.scene.add.existing(item);
+            }
+            ////////////////////////////////////////
+            
+            /////On enlève dans l'inventaire le bon nombre d'objet en fonction de sa capacity
+            let count = 0;
+            player.inventory = player.inventory.filter(itemInventory => {
+                if (itemInventory == itemToDrop && count < item.tile.properties.capacity) {
+                    count++;
+                    return false;
+                }
+                return true;
             });
+            console.log("Inventaire après dépôt :", player.inventory);
+            //MAJ inventaire visuel
+            player.updateInventory();
+            return item
+
         } else {
             console.log("L'inventaire est vide, impossible de déposer un objet.");
         }
