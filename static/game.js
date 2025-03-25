@@ -8,7 +8,6 @@ const canvas = document.getElementById('canvas');
 
 var config = {
     type: Phaser.WEBGL,
-    parent: 'phaser-example',
     width: 800,
     height: 600,
     backgroundColor: '#fffff0',
@@ -16,7 +15,11 @@ var config = {
     input : {
       keyboard : {
         target : canvas
-      }
+      },
+      mouse: {
+        // Let `mousedown` focus the game canvas
+        preventDefaultDown: false
+      },
     },
     physics: {
       default: 'arcade',

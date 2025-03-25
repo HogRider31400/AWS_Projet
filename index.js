@@ -671,6 +671,10 @@ async function launch_game(room_id){
         end_game(room_id, 1)
         return;
       }
+      if(rooms[room_id].want_skip == true){
+        rooms[room_id].want_skip = false;
+        nb_iters = 99999999 //ça en fait de l'attente woooowoiwowiqsopi uyfhqs dfoi^hqsdfgpiujqsdfgoimqdfs A LAIDE
+      }
       if(rooms[room_id].pause == false){
         nb_iters++;
         if(nb_iters == 10)
@@ -1075,6 +1079,21 @@ io.on('connection', (socket) => {
       console.log("ouais unpuauuause")
       g_broadcast("Fin de la pause", room_id)
       return;
+    }
+    if(data.message == "/complete"){
+      Object.values(players[socket.id].tasks).forEach(val => {
+        if(!val.completed){
+          console.log("Le joueur " + socket.id + " a fait la tâche " + val.name);
+          socket.emit('game',{
+            type : "completed_task",
+            name : val.name
+          })
+          val.completed = true;
+        }
+      })
+    }
+    if(data.message == "/skip"){
+      rooms[room_id].want_skip = true;
     }
     //console.log(`Message transmis à la room : ${room}`);
   
