@@ -8,7 +8,7 @@ body {
 canvas {
     position: fixed;
     top: 0;
-    left: 20%;
+    left: 25%;
     z-index: 1;
 }
 :focus {

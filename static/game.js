@@ -226,7 +226,7 @@ var game = new Phaser.Game(config)
         const tasks = data.tasks || [];
         localStorage.setItem('tasks', JSON.stringify(data.tasks)); // ici on Sauvegarde les taches recu de  serv dans le localStorage
         renderTasks();
-        document.getElementById("role").innerHTML = "Votre rôle est : " + data.role;
+        document.getElementById("role").innerHTML = "Vous êtes " + data.role;
         console.log(data.tasks)
         if(started)
           this.game_started = true;
@@ -269,7 +269,7 @@ var game = new Phaser.Game(config)
       if(data.type == "assign_role") {
         //Ici data.role c'est soit Traître soit Survivant
         console.log("Vous avez été assigné le rôle : " + data.role)
-        document.getElementById("role").innerHTML = "Votre rôle est : " + data.role;
+        document.getElementById("role").innerHTML = "Vous êtes " + data.role;
       }
       if(data.type == "assign_tasks") {
         console.log("Vous avez reçu les tâches suivantes")
