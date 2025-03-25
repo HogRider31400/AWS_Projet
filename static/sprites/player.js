@@ -96,13 +96,16 @@ export class Player extends Phaser.GameObjects.Sprite {
 
     applyMovement(){
         const speed = 150;
+        let did_smth = false;
         if(this.direction.x == "left") {
             this.body.setVelocityX(-speed);
             this.anims.play('left', true);
+            did_smth = true;
         }
         else if(this.direction.x == "right") {
             this.body.setVelocityX(speed);
             this.anims.play('right', true);
+            did_smth = true;
         }
         else {
             this.body.setVelocityX(0);
@@ -110,16 +113,26 @@ export class Player extends Phaser.GameObjects.Sprite {
 
         if(this.direction.y == "up") {
             this.body.setVelocityY(-speed);
+            did_smth = true;
             if(this.direction.x == "n")
                 this.anims.play('up', true);
         }
         else if (this.direction.y == "down") {
             this.body.setVelocityY(speed);
+            did_smth = true;
             if(this.direction.x == "n")
                 this.anims.play('down', true);
         }
         else{
             this.body.setVelocityY(0);
+        }
+        if(did_smth == false){
+            this.anims.stop();
+            this.setFrame(1); //Frame statique par défaut (milieu de la rangée bas)
+            if(this.curPlaying){
+                this.sounds[this.curPlaying].stop();
+            }
+            this.curPlaying = null;
         }
     }
 
