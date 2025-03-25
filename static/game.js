@@ -4,12 +4,20 @@ import { Chest } from "./sprites/chest.js"
 import { Player } from './sprites/player.js'
 import { WaterWell } from "./sprites/waterWell.js"
 
+const canvas = document.getElementById('canvas');
+
 var config = {
-    type: Phaser.AUTO,
+    type: Phaser.WEBGL,
     parent: 'phaser-example',
     width: 800,
     height: 600,
     backgroundColor: '#fffff0',
+    canvas : canvas,
+    input : {
+      keyboard : {
+        target : canvas
+      }
+    },
     physics: {
       default: 'arcade',
       arcade: {

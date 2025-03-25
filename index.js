@@ -208,7 +208,9 @@ app.post('/create_room', async function (req, res){
     owner : req.cookies.token,
     nb_players : players,
     players : [],
-    gamemode : gamemode
+    gamemode : gamemode,
+    pause : false,
+    want_skip : false,
   };
   //console.log(rooms)
   console.log("la room est", room_code)
@@ -669,7 +671,11 @@ async function launch_game(room_id){
         end_game(room_id, 1)
         return;
       }
-      nb_iters++;
+      if(rooms[room_id].pause == false){
+        nb_iters++;
+        if(nb_iters == 10)
+          g_broadcast("Moitié du jour", room_id)
+      }
       await sleep(1000);
     }
     //await sleep(1000 * 60 * 3)
@@ -711,8 +717,10 @@ async function launch_game(room_id){
     })
 
     //On met le sleep pour laisser les gens voter
-    await sleep(1000*20) //30s par ex
-
+    g_broadcast("Aux joueurs de voter, qui est le traître ?", room_id)
+    await sleep(1000*10) //30s par ex
+    g_broadcast("Moitié du temps de vote écoulé !", room_id)
+    await sleep(1000*10) //30s par ex
     //On récup le max dans votes
     let player_id = -1;
     let max_votes = -1;
@@ -1054,8 +1062,20 @@ io.on('connection', (socket) => {
         console.error("Erreur : le joueur n'est pas dans une room.");
         return;
     }
-  
+    const room_id = connected_players[socket.id].room_id;
     const room = connected_players[socket.id].room_id + "/game";
+    if(data.message == "/pause"){
+      rooms[room_id].pause = true
+      console.log("ouais puauuause")
+      g_broadcast("Le jeu a été mis en pause", room_id)
+      return;
+    }
+    if(data.message == "/unpause"){
+      rooms[room_id].pause = false
+      console.log("ouais unpuauuause")
+      g_broadcast("Fin de la pause", room_id)
+      return;
+    }
     //console.log(`Message transmis à la room : ${room}`);
   
     io.to(room).emit("chat-message", {
