@@ -202,7 +202,11 @@ app.post('/create_room', async function (req, res){
   //console.log("aaaaa")
   
   let {gamemode, players, player} = req.body;
-  
+  let is_private = false;
+  if(gamemode == "ClassiqueP"){
+    is_private = true;
+    gamemode = "Classique"
+  }
   let room_code = generate()
   rooms[room_code] = {
     owner : req.cookies.token,
@@ -211,6 +215,7 @@ app.post('/create_room', async function (req, res){
     gamemode : gamemode,
     pause : false,
     want_skip : false,
+    private : is_private
   };
   //console.log(rooms)
   console.log("la room est", room_code)
@@ -463,12 +468,13 @@ app.get("/get_rooms", function (req, res) {
 
   Object.keys(rooms).forEach(id => {
     let room = rooms[id]
-
+    if(room.private == true) return;
     if(room.players.length < room.nb_players){
       v_rooms.push({
         id : id, 
         nb_players : room.nb_players,
-        cur_players : room.players.length
+        cur_players : room.players.length,
+        gamemode : room.gamemode
       })
     }
   })
@@ -688,7 +694,7 @@ async function launch_game(room_id){
     //On va itérer toutes les secondes pour voir si tlm est mort (dans ce cas RIP)
     //Aussi on va faire en sorte que ça dure ~~ 60 secondes voire plus court
     let nb_iters = 0;
-    while(nb_iters < 180){
+    while(nb_iters < 60){
       if(get_alive_players(room_id, true) == 0){
         end_game(room_id, 1)
         return;
@@ -699,7 +705,7 @@ async function launch_game(room_id){
       }
       if(rooms[room_id].pause == false){
         nb_iters++;
-        if(nb_iters == 10)
+        if(nb_iters == 30)
           g_broadcast("Moitié du jour", room_id)
       }
       await sleep(1000);

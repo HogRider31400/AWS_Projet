@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             let cur_elem = document.createElement('li')
             
             let room_label = document.createElement('label')
-            room_label.innerHTML = val.id + " : " + val.cur_players + "/" + val.nb_players
+            room_label.innerHTML = val.gamemode + " " + val.id + " : " + val.cur_players + "/" + val.nb_players
             let room_btn = document.createElement('button')
             room_btn.innerHTML = "Rejoindre"
             
