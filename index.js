@@ -111,6 +111,8 @@ for(let layer_id in layers) {
   }
 }
 
+room_maps = {}
+
 //console.log(map)
 
 //En assumant des tiles de 32x32
@@ -217,6 +219,9 @@ app.post('/create_room', async function (req, res){
     want_skip : false,
     private : is_private
   };
+
+  room_maps[room_code] = structuredClone(map)
+
   //console.log(rooms)
   console.log("la room est", room_code)
   res.status(201).json({ room: room_code });
@@ -364,7 +369,7 @@ app.post("/connect_to_game", async (req,res) => {
     connected_players[socketId].socket.emit('game',{
       type : "game_state",
       inventory : connected_players[socketId].inventory,
-      map: map,
+      map: room_maps[room_id],
       started : game_started[room_id],
       pseudo : pseudo,
       tasks : players[socketId].tasks,
@@ -377,7 +382,7 @@ app.post("/connect_to_game", async (req,res) => {
   connected_players[socketId].socket.emit('game',{
     type : "game_state",
     inventory : connected_players[socketId].inventory,
-    map: map,
+    map: room_maps[room_id],
     position : null,
     tasks : null,
     pseudo : pseudo,
@@ -834,6 +839,7 @@ io.on('connection', (socket) => {
     if(!connected_players[data.player]) return;
     if(!connected_players[data.player].room_id) return;
     if(!game_started[connected_players[data.player].room_id]) return;
+    let map = room_maps[connected_players[data.player].room_id]
     if(players[socket.id]) {
       //Vivant ?
       if(!players[socket.id].alive) return;
@@ -919,6 +925,7 @@ io.on('connection', (socket) => {
     if(!connected_players[data.player]) return;
     if(!connected_players[data.player].room_id) return;
     if(!game_started[connected_players[data.player].room_id]) return;
+    let map = room_maps[connected_players[data.player].room_id]
     if(!map[data.item_id]) return;
     if(!players[data.player]) return;
     if(!players[data.player].alive) return;
@@ -947,6 +954,7 @@ io.on('connection', (socket) => {
     if(!connected_players[data.player]) return;
     if(!connected_players[data.player].room_id) return;
     if(!game_started[connected_players[data.player].room_id]) return;
+    let map = room_maps[connected_players[data.player].room_id]
     if(!players[data.player]) return;
     if(!players[data.player].alive) return;
     /*
