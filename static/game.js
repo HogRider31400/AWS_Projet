@@ -335,6 +335,10 @@ var game = new Phaser.Game(config)
       });
       document.getElementById("voteModal").close()
     })
+    const btnAband = document.getElementById("noVote")
+    btnAband.addEventListener('click', () => {
+      document.getElementById('voteModal').close()
+    })
 
 
     socket.on('action', (data) => {

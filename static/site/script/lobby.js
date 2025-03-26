@@ -9,8 +9,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
       let elem = document.getElementById("player-list")
 
-      for(let selem of elem.children)
-        selem.remove()
+      elem.innerHTML = ""
 
       for(let pseudo of data){
         let nelem = document.createElement('li')

@@ -36,27 +36,6 @@ header h1 {
 }
 
 
-.character-display p {
-    color: white;
-    font-weight: bold;
-    text-shadow: black 2px 2px 2px;
-}
-
-.character-display {
-    text-align: center;
-    margin: 0 1rem;
-}
-
-.character-circle {
-    width: 100px;
-    height: 100px;
-    background-image: url('/frontend/images/perso1.png');
-    background-size: cover;
-    background-position: center;
-    border-radius: 50%;
-    margin: 1.5rem auto;
-}
-
 .arrow-button {
     background: none;
     border: 2px solid white;
@@ -89,6 +68,24 @@ label {
     color: white;
     text-shadow: black 2px 2px 2px;
     font-family: 'Arial', sans-serif;
+}
+
+li {
+    label {
+        display : inline-block
+    }
+    button {
+        margin-left: 10px;
+        color : white;
+        padding : 3px;
+        background-color: #007bff;
+        border-radius: 3px;
+        border : none;
+    }
+}
+
+ul {
+    list-style-type: none;
 }
 
 input, select {

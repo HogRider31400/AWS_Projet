@@ -242,6 +242,7 @@ app.post('/room', async function (req, res){
   if(rooms[room_id] == undefined) return
   if(rooms[room_id].players == undefined) return
   if(game_started[room_id]) return;
+  if(rooms[room_id].players.length > rooms[room_id].nb_players) return;
   //rooms[room_id].players.push(req.cookies.token)
   //console.log(socketId_socket)
   //console.log(req.body)
@@ -457,6 +458,27 @@ app.post("/login", async (req, res) => {
     res.json({ message: "Connexion réussie !" });
 });
 
+app.get("/get_rooms", function (req, res) {
+  let v_rooms = [];
+
+  Object.keys(rooms).forEach(id => {
+    let room = rooms[id]
+
+    if(room.players.length < room.nb_players){
+      v_rooms.push({
+        id : id, 
+        nb_players : room.nb_players,
+        cur_players : room.players.length
+      })
+    }
+  })
+
+  res.status(201).json({
+    rooms : v_rooms
+  })
+
+})
+
 app.get('/game', function (req, res) {
   res.sendFile(__dirname + '/index_jeu.html');
 });
@@ -666,7 +688,7 @@ async function launch_game(room_id){
     //On va itérer toutes les secondes pour voir si tlm est mort (dans ce cas RIP)
     //Aussi on va faire en sorte que ça dure ~~ 60 secondes voire plus court
     let nb_iters = 0;
-    while(nb_iters < 20){
+    while(nb_iters < 180){
       if(get_alive_players(room_id, true) == 0){
         end_game(room_id, 1)
         return;
@@ -721,10 +743,10 @@ async function launch_game(room_id){
     })
 
     //On met le sleep pour laisser les gens voter
-    g_broadcast("Aux joueurs de voter, qui est le traître ?", room_id)
-    await sleep(1000*10) //30s par ex
+    g_broadcast("Aux joueurs de voter, qui est le traître ? Vous avez 30 secondes !", room_id)
+    await sleep(1000*15) //30s par ex
     g_broadcast("Moitié du temps de vote écoulé !", room_id)
-    await sleep(1000*10) //30s par ex
+    await sleep(1000*15) //30s par ex
     //On récup le max dans votes
     let player_id = -1;
     let max_votes = -1;
@@ -1129,7 +1151,7 @@ io.on('connection', (socket) => {
           room_players.push(val.player);
         })
         io.to(room_id+"/lobby").emit("players", room_players)
-        if(rooms[room_id].players.length == 0) rooms_to_del;
+        if(rooms[room_id].players.length == 0) rooms_to_del.push(room_id);
       })
 
       rooms_to_del.forEach((val, id) => {
