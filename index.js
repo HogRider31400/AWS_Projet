@@ -878,14 +878,18 @@ io.on('connection', (socket) => {
       let y_dep = Math.floor(player.y/32)
       let x_arr = Math.ceil(data.x/32)
       let y_arr = Math.ceil(data.y/32)
+      let x_ratio = Math.abs(player.x/data.x)
+      let y_ratio = Math.abs(player.y/data.y)
+      
+      
 
       //On va se dire qu'on fait au plus 1000 iters sinon : comportement non cohérent ?
       let nb_iter = 1;
       let x_cur = x_dep
       let y_cur = y_dep
-      while(Math.abs(x_cur - x_arr) >= 5 && Math.abs(y_cur - y_arr) >= 5){
-        x_cur = x_dep + nb_iter * dir_x
-        y_cur = y_dep + nb_iter * dir_y
+      while(Math.abs(x_cur - x_arr) >= 2 && Math.abs(y_cur - y_arr) >= 2){
+        x_cur = x_dep + Math.floor(nb_iter * dir_x * x_ratio)
+        y_cur = y_dep + Math.floor(nb_iter * dir_y * y_ratio)
         
         console.log(x_cur,x_arr,y_cur,y_arr)
         //Est-ce qu'on passe par le vide ?
